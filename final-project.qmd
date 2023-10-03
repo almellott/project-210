@@ -1,0 +1,15 @@
+---
+title: "Untitled"
+format: html
+editor: visual
+---
+
+```{r}
+library(haven)
+```
+
+```{r}
+data <- read_xpt("SLQ_J.XPT")
+diet <- read_xpt("DR1IFF_J.XPT")
+```
+
