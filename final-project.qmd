@@ -6,10 +6,22 @@ editor: visual
 
 ```{r}
 library(haven)
+library(tidyverse)
 ```
 
 ```{r}
-data <- read_xpt("SLQ_J.XPT")
+sleep <- read_xpt("SLQ_J.XPT")
 diet <- read_xpt("DR1IFF_J.XPT")
+```
+
+```{r}
+#histograms of sleep hours on weekdays vs weekends.SLD012 represents week days and SLD013 weekends.
+sleep |> 
+  select(c(SEQN, SLD012, SLD013)) |>
+  pivot_longer(cols = c('SLD012', 'SLD013'),
+               names_to = 'period',
+               values_to = 'hours') |>
+  ggplot(aes(x = hours, fill = period)) + geom_histogram(bins = 24) + facet_grid(period~.) +
+  theme(legend.position = 'none')
 ```
 
