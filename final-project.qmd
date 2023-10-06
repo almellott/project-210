@@ -11,7 +11,8 @@ library(tidyverse)
 
 ```{r}
 sleep <- read_xpt("SLQ_J.XPT")
-diet <- read_xpt("DR1IFF_J.XPT")
+diet_intake <- read_xpt("DR1IFF_J.XPT")
+diet_total <- read_xpt("DR1TOT_J.XPT")
 ```
 
 ```{r}
@@ -25,3 +26,19 @@ sleep |>
   theme(legend.position = 'none')
 ```
 
+```{r}
+diet_total %>%
+  select(DR1TPROT, DR1TCARB, DR1TTFAT, DR1TFIBE) %>%
+  pivot_longer(cols = everything(), names_to = "Category", values_to = "Value") %>%
+  filter(!is.na(Value)) %>%
+  ggplot(aes(x = Value, fill = Category)) +
+  geom_histogram(color = "black", alpha = 0.7) +
+  facet_wrap(~ Category, scales = c("free")) +
+  labs(
+    x = "Values (g)",
+    y = "Frequency",
+    title = "Histograms of Daily Macronutrient Intake"
+  ) +
+  theme(legend.position = "none") +
+  theme_minimal()
+```
