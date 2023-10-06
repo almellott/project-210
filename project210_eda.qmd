@@ -1,0 +1,164 @@
+---
+title: "Exploratory Data Analysis"
+format: html
+editor: visual
+---
+
+```{r}
+library(haven)
+library(tidyverse)
+```
+
+```{r}
+sleep <- read_xpt("SLQ_J.XPT")
+diet_intake <- read_xpt("DR1IFF_J.XPT")
+diet_total <- read_xpt("DR1TOT_J.XPT")
+```
+
+```{r}
+dat <- merge(sleep, diet_total, by = "SEQN")
+```
+
+# Univariate Sleep Data
+```{r}
+sleep |>
+  ggplot(aes(x = SLQ120)) +
+  geom_histogram(bins = 10) +
+  xlab("Feeling Overly Sleepy During the Day")
+
+sleep |>
+  ggplot(aes(x = SLQ050)) +
+  geom_histogram(bins = 10) +
+  xlab("Ever Told the Doctor You Had Trouble Sleeping")
+```
+
+# Hours of Sleep vs. Protein
+```{r}
+dat |>
+  ggplot(aes(x = DR1TPROT, y = SLD012)) +
+  geom_jitter(alpha = 0.7) +
+  ylab("Hours of Sleep on Weekdays")
+
+summary(lm(SLD012 ~ DR1TPROT, data = dat)) # significant, -
+
+dat |>
+  ggplot(aes(x = DR1TPROT, y = SLD013)) +
+  geom_jitter(alpha = 0.7) +
+  ylab("Hours of Sleep on Weekends")
+
+summary(lm(SLD013 ~ DR1TPROT, data = dat)) # not significant
+```
+
+# Hours of Sleep vs. Carbohydrates
+```{r}
+dat |>
+  ggplot(aes(x = DR1TCARB, y = SLD012)) +
+  geom_jitter(alpha = 0.7) +
+  ylab("Hours of Sleep on Weekdays")
+
+summary(lm(SLD012 ~ DR1TCARB, data = dat)) # significant, -
+
+dat |>
+  ggplot(aes(x = DR1TCARB, y = SLD013)) +
+  geom_jitter(alpha = 0.7) +
+  ylab("Hours of Sleep on Weekends")
+
+summary(lm(SLD013 ~ DR1TCARB, data = dat)) # not significant
+```
+
+# Hours of Sleep vs. Fat
+```{r}
+dat |>
+  ggplot(aes(x = DR1TTFAT, y = SLD012)) +
+  geom_jitter(alpha = 0.7) +
+  ylab("Hours of Sleep on Weekdays")
+
+summary(lm(SLD012 ~ DR1TTFAT, data = dat)) # significant, -
+
+dat |>
+  ggplot(aes(x = DR1TTFAT, y = SLD013)) +
+  geom_jitter(alpha = 0.7) +
+  ylab("Hours of Sleep on Weekends")
+
+summary(lm(SLD013 ~ DR1TTFAT, data = dat)) # not significant
+```
+
+# Hours of Sleep vs. Fiber
+```{r}
+dat |>
+  ggplot(aes(x = DR1TFIBE, y = SLD012)) +
+  geom_jitter(alpha = 0.7) +
+  ylab("Hours of Sleep on Weekdays")
+
+summary(lm(SLD012 ~ DR1TFIBE, data = dat)) # not significant
+
+dat |>
+  ggplot(aes(x = DR1TFIBE, y = SLD013)) +
+  geom_jitter(alpha = 0.7) +
+  ylab("Hours of Sleep on Weekends")
+
+summary(lm(SLD013 ~ DR1TFIBE, data = dat)) # not significant
+```
+
+# Feeling Overly Sleepy During the Day by Macro
+```{r}
+dat |>
+  ggplot(aes(x = DR1TPROT, y = SLQ120)) +
+  geom_jitter(alpha = 0.7) +
+  ylab("Feeling Overly Sleepy During the Day")
+
+summary(lm(SLQ120 ~ DR1TPROT, data = dat)) # not significant
+
+dat |>
+  ggplot(aes(x = DR1TCARB, y = SLQ120)) +
+  geom_jitter(alpha = 0.7) +
+  ylab("Feeling Overly Sleepy During the Day")
+
+summary(lm(SLQ120 ~ DR1TCARB, data = dat)) # significant, +
+
+dat |>
+  ggplot(aes(x = DR1TTFAT, y = SLQ120)) +
+  geom_jitter(alpha = 0.7) +
+  ylab("Feeling Overly Sleepy During the Day")
+
+summary(lm(SLQ120 ~ DR1TTFAT, data = dat)) # significant, +
+
+dat |>
+  ggplot(aes(x = DR1TFIBE, y = SLQ120)) +
+  geom_jitter(alpha = 0.7) +
+  ylab("Feeling Overly Sleepy During the Day")
+
+summary(lm(SLQ120 ~ DR1TFIBE, data = dat)) # significant, -
+```
+
+# Trouble Sleeping by Macro
+```{r}
+dat |>
+  ggplot(aes(x = DR1TPROT, y = SLQ050)) +
+  geom_jitter(alpha = 0.7) +
+  ylab("Ever Told the Doctor You Had Trouble Sleeping")
+
+summary(lm(SLQ050 ~ DR1TPROT, data = dat)) # not significant
+
+dat |>
+  ggplot(aes(x = DR1TCARB, y = SLQ050)) +
+  geom_jitter(alpha = 0.7) +
+  ylab("Ever Told the Doctor You Had Trouble Sleeping")
+
+summary(lm(SLQ050 ~ DR1TCARB, data = dat)) # significant, +
+
+dat |>
+  ggplot(aes(x = DR1TTFAT, y = SLQ050)) +
+  geom_jitter(alpha = 0.7) +
+  ylab("Ever Told the Doctor You Had Trouble Sleeping")
+
+summary(lm(SLQ050 ~ DR1TTFAT, data = dat)) # not significant
+
+dat |>
+  ggplot(aes(x = DR1TFIBE, y = SLQ050)) +
+  geom_jitter(alpha = 0.7) +
+  ylab("Ever Told the Doctor You Had Trouble Sleeping")
+
+summary(lm(SLQ050 ~ DR1TFIBE, data = dat)) # significant, +
+```
+
