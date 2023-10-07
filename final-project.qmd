@@ -16,6 +16,41 @@ diet_total <- read_xpt("DR1TOT_J.XPT")
 ```
 
 ```{r}
+# Exploration of missing data 
+
+# Start with total number of participants with sleep data
+sleep %>% pull(SEQN) %>% length()
+# N = 6161
+
+# Filter out participants with missing data on sleep duration
+temp1 = sleep %>% filter(!is.na(SLD012)) %>% filter(!is.na(SLD013))
+temp1 %>% pull(SEQN) %>% length()
+# N = 6090
+
+# Filter out participants with missing data on overly-sleepiness and consulting a doctor
+temp2 = temp1 %>% filter(!is.na(SLQ050)) %>% filter(SLQ050 != 9) %>% filter(SLQ050 != 7) 
+temp3 = temp2 %>% filter(!is.na(SLQ120)) %>% filter(SLQ120 != 9) %>% filter(SLQ120 != 7) 
+temp3 %>% pull(SEQN) %>% length()
+temp4 = temp3 %>% pull(SEQN)
+# N = 6076
+
+# Filter out participants with missing data on macronutrient intake
+temp5 = diet_total %>% filter(!is.na(DR1TKCAL)) %>% filter(!is.na(DR1TPROT)) %>% 
+  filter(!is.na(DR1TCARB)) %>% filter(!is.na(DR1TTFAT)) %>% filter(!is.na(DR1TFIBE)) 
+temp6 = temp5 %>% pull(SEQN) %>% intersect(temp4) 
+temp6 %>% length()
+# N = 5201
+
+# Filter out participants with missing data on timing of deitary intake
+temp7 = diet_intake %>% group_by(SEQN) %>% slice(1) %>% filter(!is.na(DR1_020)) 
+temp8 = diet_intake %>% group_by(SEQN) %>% slice(n()) %>% filter(!is.na(DR1_020))
+temp9 = temp6 %>% intersect(temp7 %>% pull(SEQN)) %>% intersect(temp8 %>% pull(SEQN))
+temp9 %>% length()
+# N = 5200
+
+```
+
+```{r}
 #histograms of sleep hours on weekdays vs weekends.SLD012 represents week days and SLD013 weekends.
 sleep |> 
   select(c(SEQN, SLD012, SLD013)) |>
