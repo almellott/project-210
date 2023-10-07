@@ -13,6 +13,7 @@ library(tidyverse)
 sleep <- read_xpt("SLQ_J.XPT")
 diet_intake <- read_xpt("DR1IFF_J.XPT")
 diet_total <- read_xpt("DR1TOT_J.XPT")
+demo <- read_xpt("DEMO_J.XPT")
 ```
 
 ```{r}
@@ -62,18 +63,60 @@ sleep |>
 ```
 
 ```{r}
-diet_total %>%
-  select(DR1TPROT, DR1TCARB, DR1TTFAT, DR1TFIBE) %>%
-  pivot_longer(cols = everything(), names_to = "Category", values_to = "Value") %>%
-  filter(!is.na(Value)) %>%
-  ggplot(aes(x = Value, fill = Category)) +
-  geom_histogram(color = "black", alpha = 0.7) +
-  facet_wrap(~ Category, scales = c("free")) +
+# Histogram of total daily calorie intake, stratified by gender
+
+# Merge in gender data
+merged_diet <- diet_total %>%
+  left_join(select(demo, SEQN, RIAGENDR), by = "SEQN")
+merged_diet <- merged_diet[!is.na(merged_diet$DR1TKCAL), ]
+
+merged_diet %>%
+  ggplot(aes(x = DR1TKCAL, fill = factor(RIAGENDR))) +
+  geom_histogram(position = "identity", alpha = 0.5, bins = 30) + 
+  labs(
+    x = "Energy Intake (Kcal)",
+    y = "Frequency",
+    title = "KCAL Intake Stratified by Sex"
+  ) +
+  theme_minimal() +
+  scale_fill_manual(
+    values = c("red", "blue"),
+    labels = c("Male", "Female") 
+  ) +
+  labs(fill = "Gender")
+```
+
+```{r}
+# Histogram of macronutrient intake, stratified by gender
+
+# Filter out rows with missing values
+filtered_diet <- merged_diet %>%
+  filter(!is.na(DR1TPROT) & !is.na(DR1TCARB) & !is.na(DR1TTFAT) & !is.na(DR1TFIBE) & !is.na(RIAGENDR))
+
+# Reshape the data to a long format
+long_diet <- filtered_diet %>%
+  select(DR1TPROT, DR1TCARB, DR1TTFAT, DR1TFIBE, RIAGENDR) %>%
+  pivot_longer(
+    cols = c(DR1TPROT, DR1TCARB, DR1TTFAT, DR1TFIBE),
+    names_to = "Category",
+    values_to = "Value"
+  )
+
+ggplot(long_diet, aes(x = Value, fill = factor(RIAGENDR))) +
+  geom_histogram(position = "identity", alpha = 0.5, bins = 30) +
+  facet_wrap(~ Category, nrow = 2, ncol = 2, scales = "free",
+             labeller = as_labeller(c(DR1TPROT = "Protein", DR1TCARB = "Carbohydrate", 
+                                      DR1TTFAT = "Total Fat", DR1TFIBE = "Dietary Fiber"))) +
   labs(
     x = "Values (g)",
     y = "Frequency",
-    title = "Histograms of Daily Macronutrient Intake"
+    title = "Macronutrient Intake Stratified by Sex",
+    fill = "Gender"
+    
   ) +
-  theme(legend.position = "none") +
+  scale_fill_manual(
+    values = c("red", "blue"),
+    labels = c("Male", "Female")
+  ) +
   theme_minimal()
 ```
