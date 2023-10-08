@@ -10,7 +10,6 @@ library(tidyverse)
 library(gridExtra)
 library(grid)
 library(gridtext)
-library(chron)
 ```
 
 ```{r}
