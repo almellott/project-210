@@ -1,7 +1,7 @@
 ---
 title: "Untitled"
 format: html
-editor: visual
+editor: source
 ---
 
 ```{r}
@@ -49,6 +49,51 @@ temp9 = temp6 %>% intersect(temp7 %>% pull(SEQN)) %>% intersect(temp8 %>% pull(S
 temp9 %>% length()
 # N = 5200
 
+```
+
+```{r}
+#Further data missing analysis:
+dropped_sleep <- anti_join(sleep, diet_total, by = "SEQN")
+dropped_diet <- merge(sleep, diet_total, by = "SEQN")
+dropped_diet <- dropped_diet |>
+  filter((is.na(DR1TKCAL) | is.na(DR1TPROT) | is.na(DR1TCARB) | is.na(DR1TTFAT) | is.na(DR1TFIBE)))
+
+
+# create var to sort according to exclusion group
+grp_data <- sleep |>
+  mutate(exclgrp = ifelse((SEQN %in% dropped_sleep$SEQN | SEQN %in% dropped_diet$SEQN), "NA Diet Data",
+                          ifelse((is.na(SLQ050) | is.na(SLQ120) | is.na(SLD012) | is.na(SLD013)), "NA Sleep Data", 
+                                 ifelse(SLQ050 == 9 | SLQ120 == 9, "Don't Knows", "Full Responses")))) |>
+  select(SLQ050, SLQ120, SLD012, SLD013, exclgrp)
+
+#convert categorical responses to characters for plotting
+grp_data$SLQ050 <- as.character(grp_data$SLQ050)
+grp_data$SLQ120 <- as.character(grp_data$SLQ120)
+
+#plotting histograms of sleep hours weekdays vs. exclgrp
+grp_data |>
+  ggplot(aes(x = SLD012)) + facet_grid(exclgrp~., scales = "free_y") + geom_histogram(aes(fill = exclgrp)) +
+  ggtitle("Sleep Distribution for Weekdays") + xlab("Hours of Sleep")
+
+#plotting histograms of sleep hours weekends sleepy vs excl grp
+grp_data |>
+  ggplot(aes(x = SLD013), fill = exclgrp) + facet_grid(exclgrp~., scales = "free_y") + geom_histogram(aes(fill = exclgrp)) +
+   ggtitle("Sleep Distribution for Weekends") + xlab("Hours of Sleep")
+
+#plotting bar charts of overly sleepy
+grp_data |>
+  filter(exclgrp != "Don't Knows") |>
+  ggplot(aes(x = (SLQ120), fill = exclgrp)) + geom_bar() + facet_grid(exclgrp~., scales = "free_y") +
+  ggtitle("Responses to: How often do you feel overly sleepy?") +
+  xlab("Response Category")
+
+
+#plotting bar charts of i told the doc
+grp_data |>
+  filter(exclgrp != "Don't Knows") |>
+  ggplot(aes(x = (SLQ050), fill = exclgrp)) + geom_bar() + facet_grid(exclgrp~., scales = "free_y") +
+  ggtitle("Responses to: Have you ever told a doctor you've had trouble sleeping?") +
+  xlab("Response Category")
 ```
 
 ```{r}
