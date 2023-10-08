@@ -110,7 +110,7 @@ fibe_weekend <- dat |>
 
 summary(lm(SLD013 ~ DR1TFIBE, data = dat)) # not significant
 
-yleft_weekend = richtext_grob("Hours of Sleep on Weekdays", rot=90)
+yleft_weekend = richtext_grob("Hours of Sleep on Weekends", rot=90)
 
 top_weekend = richtext_grob("Macronutrient Consumption vs. Weekend Sleep")
 
