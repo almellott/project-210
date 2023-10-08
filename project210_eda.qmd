@@ -75,7 +75,9 @@ summary(lm(SLD012 ~ DR1TFIBE, data = dat)) # not significant
 
 yleft_weekday = richtext_grob("Hours of Sleep on Weekdays", rot=90)
 
-grid.arrange(prot_weekday, carb_weekday, fat_weekday, fibe_weekday, ncol=2, nrow =2, left = yleft_weekday)
+top_weekday = richtext_grob("Macronutrient Consumption vs. Weekday Sleep")
+
+grid.arrange(prot_weekday, carb_weekday, fat_weekday, fibe_weekday, ncol=2, nrow =2, left = yleft_weekday, top = top_weekday)
 ```
 
 ## Macronutrient Consumption vs. Weekend Sleep
@@ -110,7 +112,9 @@ summary(lm(SLD013 ~ DR1TFIBE, data = dat)) # not significant
 
 yleft_weekend = richtext_grob("Hours of Sleep on Weekdays", rot=90)
 
-grid.arrange(prot_weekend, carb_weekend, fat_weekend, fibe_weekend, ncol=2, nrow =2, left = yleft_weekend)
+top_weekend = richtext_grob("Macronutrient Consumption vs. Weekend Sleep")
+
+grid.arrange(prot_weekend, carb_weekend, fat_weekend, fibe_weekend, ncol=2, nrow =2, left = yleft_weekend, top = top_weekend)
 ```
 
 ## Macronutrient Consumption vs. Feeling Overly Sleepy During the Day
@@ -149,7 +153,9 @@ summary(lm(SLQ120 ~ DR1TFIBE, data = dat)) # significant, -
 
 yleft_sleepy = richtext_grob("Feeling Overly Sleepy During the Day", rot=90)
 
-grid.arrange(prot_sleepy, carb_sleepy, fat_sleepy, fibe_sleepy, ncol=2, nrow =2, left = yleft_sleepy)
+top_sleepy = richtext_grob("Macronutrient Consumption vs. Feeling Overly Sleepy")
+
+grid.arrange(prot_sleepy, carb_sleepy, fat_sleepy, fibe_sleepy, ncol=2, nrow =2, left = yleft_sleepy, top = top_sleepy)
 ```
 
 ## Macronutrient Consumption vs. Trouble Sleeping
@@ -186,9 +192,11 @@ fibe_trouble <- dat |>
 
 summary(lm(SLQ050 ~ DR1TFIBE, data = dat)) # significant, +
 
-yleft_trouble = richtext_grob("Ever Told the Doctor You Had Trouble Sleeping", rot=90)
+yleft_trouble = richtext_grob("Told Doctor You Had Trouble Sleeping", rot=90)
 
-grid.arrange(prot_trouble, carb_trouble, fat_trouble, fibe_trouble, ncol=2, nrow =2, left = yleft_trouble)
+top_trouble = richtext_grob("Macronutrient Consumption vs. Trouble Sleeping")
+
+grid.arrange(prot_trouble, carb_trouble, fat_trouble, fibe_trouble, ncol=2, nrow =2, left = yleft_trouble, top = top_trouble)
 ```
 
 # Temporal Eating Habits vs. Sleep Quality
@@ -223,7 +231,9 @@ summary(lm(SLD012 ~ DR1_020, data = dat2_dinner)) # not significant
 
 yleft_meal_weekday = richtext_grob("Hours of Sleep on Weekdays", rot=90)
 
-grid.arrange(breakfast_weekday, lunch_weekday, dinner_weekday, ncol=2, nrow =2, left = yleft_meal_weekday)
+top_meal_weekday = richtext_grob("Meal Time vs. Weekday Sleep")
+
+grid.arrange(breakfast_weekday, lunch_weekday, dinner_weekday, ncol=2, nrow =2, left = yleft_meal_weekday, top = top_meal_weekday)
 ```
 
 ## Meal Time vs. Weekend Sleep
@@ -257,7 +267,9 @@ summary(lm(SLD013 ~ DR1_020, data = dat2_dinner)) # not significant
 
 yleft_meal_weekend = richtext_grob("Hours of Sleep on Weekends", rot=90)
 
-grid.arrange(breakfast_weekend, lunch_weekend, dinner_weekend, ncol=2, nrow =2, left = yleft_meal_weekend)
+top_meal_weekend = richtext_grob("Meal Time vs. Weekend Sleep")
+
+grid.arrange(breakfast_weekend, lunch_weekend, dinner_weekend, ncol=2, nrow =2, left = yleft_meal_weekend, top = top_meal_weekend)
 ```
 
 ## Meal Time vs. Feeling Overly Sleepy During the Day
@@ -294,7 +306,9 @@ summary(lm(SLQ120 ~ DR1_020, data = dat2_dinner)) # significant, -
 
 yleft_meal_sleepy = richtext_grob("Feeling Overly Sleepy During the Day", rot=90)
 
-grid.arrange(breakfast_sleepy, lunch_sleepy, dinner_sleepy, ncol=2, nrow =2, left = yleft_meal_sleepy)
+top_meal_sleepy = richtext_grob("Meal Time vs. Feeling Overly Sleepy")
+
+grid.arrange(breakfast_sleepy, lunch_sleepy, dinner_sleepy, ncol=2, nrow =2, left = yleft_meal_sleepy, top = top_meal_sleepy)
 ```
 
 ## Meal Time vs. Trouble Sleeping
@@ -329,9 +343,11 @@ dinner_trouble <- dat2 |>
 
 summary(lm(SLQ050 ~ DR1_020, data = dat2_dinner)) # significant, +
 
-yleft_meal_trouble = richtext_grob("Ever Told the Doctor You Had Trouble Sleeping", rot=90)
+yleft_meal_trouble = richtext_grob("Told Doctor You Had Trouble Sleeping", rot=90)
 
-grid.arrange(breakfast_trouble, lunch_trouble, dinner_trouble, ncol=2, nrow =2, left = yleft_meal_trouble)
+top_meal_trouble = richtext_grob("Meal Time vs. Trouble Sleeping")
+
+grid.arrange(breakfast_trouble, lunch_trouble, dinner_trouble, ncol=2, nrow =2, left = yleft_meal_trouble, top = top_meal_trouble)
 ```
 
 # Number of Hours Awake vs. Sleep Quality
