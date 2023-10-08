@@ -7,6 +7,10 @@ editor: visual
 ```{r}
 library(haven)
 library(tidyverse)
+library(gridExtra)
+library(grid)
+library(gridtext)
+library(chron)
 ```
 
 ```{r}
@@ -17,148 +21,358 @@ diet_total <- read_xpt("DR1TOT_J.XPT")
 
 ```{r}
 dat <- merge(sleep, diet_total, by = "SEQN")
+
+dat2 <- merge(sleep, diet_intake, by = "SEQN")
+dat2_breakfast <- dat2 |> filter(DR1_030Z == 1)
+dat2_lunch <- dat2 |> filter(DR1_030Z == 2)
+dat2_dinner <- dat2 |> filter(DR1_030Z == 3)
 ```
 
 # Univariate Sleep Data
 ```{r}
 sleep |>
   ggplot(aes(x = SLQ120)) +
-  geom_histogram(bins = 10) +
+  geom_bar() +
   xlab("Feeling Overly Sleepy During the Day")
 
 sleep |>
   ggplot(aes(x = SLQ050)) +
-  geom_histogram(bins = 10) +
+  geom_bar() +
   xlab("Ever Told the Doctor You Had Trouble Sleeping")
 ```
 
-# Hours of Sleep vs. Protein
+# Macronutrient Consumption vs. Sleep Quality
+## Macronutrient Consumption vs. Weekday Sleep
 ```{r}
-dat |>
+prot_weekday <- dat |>
   ggplot(aes(x = DR1TPROT, y = SLD012)) +
   geom_jitter(alpha = 0.7) +
-  ylab("Hours of Sleep on Weekdays")
+  ylab("")
 
 summary(lm(SLD012 ~ DR1TPROT, data = dat)) # significant, -
 
-dat |>
-  ggplot(aes(x = DR1TPROT, y = SLD013)) +
-  geom_jitter(alpha = 0.7) +
-  ylab("Hours of Sleep on Weekends")
-
-summary(lm(SLD013 ~ DR1TPROT, data = dat)) # not significant
-```
-
-# Hours of Sleep vs. Carbohydrates
-```{r}
-dat |>
+carb_weekday <- dat |>
   ggplot(aes(x = DR1TCARB, y = SLD012)) +
   geom_jitter(alpha = 0.7) +
-  ylab("Hours of Sleep on Weekdays")
+  ylab("")
 
 summary(lm(SLD012 ~ DR1TCARB, data = dat)) # significant, -
 
-dat |>
-  ggplot(aes(x = DR1TCARB, y = SLD013)) +
-  geom_jitter(alpha = 0.7) +
-  ylab("Hours of Sleep on Weekends")
-
-summary(lm(SLD013 ~ DR1TCARB, data = dat)) # not significant
-```
-
-# Hours of Sleep vs. Fat
-```{r}
-dat |>
+fat_weekday <- dat |>
   ggplot(aes(x = DR1TTFAT, y = SLD012)) +
   geom_jitter(alpha = 0.7) +
-  ylab("Hours of Sleep on Weekdays")
+  ylab("")
 
 summary(lm(SLD012 ~ DR1TTFAT, data = dat)) # significant, -
 
-dat |>
-  ggplot(aes(x = DR1TTFAT, y = SLD013)) +
-  geom_jitter(alpha = 0.7) +
-  ylab("Hours of Sleep on Weekends")
-
-summary(lm(SLD013 ~ DR1TTFAT, data = dat)) # not significant
-```
-
-# Hours of Sleep vs. Fiber
-```{r}
-dat |>
+fibe_weekday <- dat |>
   ggplot(aes(x = DR1TFIBE, y = SLD012)) +
   geom_jitter(alpha = 0.7) +
-  ylab("Hours of Sleep on Weekdays")
+  ylab("")
 
 summary(lm(SLD012 ~ DR1TFIBE, data = dat)) # not significant
 
-dat |>
-  ggplot(aes(x = DR1TFIBE, y = SLD013)) +
-  geom_jitter(alpha = 0.7) +
-  ylab("Hours of Sleep on Weekends")
 
-summary(lm(SLD013 ~ DR1TFIBE, data = dat)) # not significant
+yleft_weekday = richtext_grob("Hours of Sleep on Weekdays", rot=90)
+
+grid.arrange(prot_weekday, carb_weekday, fat_weekday, fibe_weekday, ncol=2, nrow =2, left = yleft_weekday)
 ```
 
-# Feeling Overly Sleepy During the Day by Macro
+## Macronutrient Consumption vs. Weekend Sleep
 ```{r}
-dat |>
-  ggplot(aes(x = DR1TPROT, y = SLQ120)) +
+prot_weekend <- dat |>
+  ggplot(aes(x = DR1TPROT, y = SLD013)) +
   geom_jitter(alpha = 0.7) +
-  ylab("Feeling Overly Sleepy During the Day")
+  ylab("")
+
+summary(lm(SLD013 ~ DR1TPROT, data = dat)) # not significant
+
+carb_weekend <- dat |>
+  ggplot(aes(x = DR1TCARB, y = SLD013)) +
+  geom_jitter(alpha = 0.7) +
+  ylab("")
+
+summary(lm(SLD013 ~ DR1TCARB, data = dat)) # not significant
+
+fat_weekend <- dat |>
+  ggplot(aes(x = DR1TTFAT, y = SLD013)) +
+  geom_jitter(alpha = 0.7) +
+  ylab("")
+
+summary(lm(SLD013 ~ DR1TTFAT, data = dat)) # not significant
+
+fibe_weekend <- dat |>
+  ggplot(aes(x = DR1TFIBE, y = SLD013)) +
+  geom_jitter(alpha = 0.7) +
+  ylab("")
+
+summary(lm(SLD013 ~ DR1TFIBE, data = dat)) # not significant
+
+yleft_weekend = richtext_grob("Hours of Sleep on Weekdays", rot=90)
+
+grid.arrange(prot_weekend, carb_weekend, fat_weekend, fibe_weekend, ncol=2, nrow =2, left = yleft_weekend)
+```
+
+## Macronutrient Consumption vs. Feeling Overly Sleepy During the Day
+```{r}
+prot_sleepy <- dat |>
+  mutate(SLQ120 = as.factor(SLQ120)) |>
+  ggplot(aes(x = DR1TPROT, y = SLQ120)) +
+  geom_boxplot() +
+  ylab("")
 
 summary(lm(SLQ120 ~ DR1TPROT, data = dat)) # not significant
 
-dat |>
+carb_sleepy <- dat |>
+  mutate(SLQ120 = as.factor(SLQ120)) |>
   ggplot(aes(x = DR1TCARB, y = SLQ120)) +
-  geom_jitter(alpha = 0.7) +
-  ylab("Feeling Overly Sleepy During the Day")
+  geom_boxplot() +
+  ylab("")
 
 summary(lm(SLQ120 ~ DR1TCARB, data = dat)) # significant, +
 
-dat |>
+fat_sleepy <- dat |>
+  mutate(SLQ120 = as.factor(SLQ120)) |>
   ggplot(aes(x = DR1TTFAT, y = SLQ120)) +
-  geom_jitter(alpha = 0.7) +
-  ylab("Feeling Overly Sleepy During the Day")
+  geom_boxplot() +
+  ylab("")
 
 summary(lm(SLQ120 ~ DR1TTFAT, data = dat)) # significant, +
 
-dat |>
+fibe_sleepy <- dat |>
+  mutate(SLQ120 = as.factor(SLQ120)) |>
   ggplot(aes(x = DR1TFIBE, y = SLQ120)) +
-  geom_jitter(alpha = 0.7) +
-  ylab("Feeling Overly Sleepy During the Day")
+  geom_boxplot() +
+  ylab("")
 
 summary(lm(SLQ120 ~ DR1TFIBE, data = dat)) # significant, -
+
+yleft_sleepy = richtext_grob("Feeling Overly Sleepy During the Day", rot=90)
+
+grid.arrange(prot_sleepy, carb_sleepy, fat_sleepy, fibe_sleepy, ncol=2, nrow =2, left = yleft_sleepy)
 ```
 
-# Trouble Sleeping by Macro
+## Macronutrient Consumption vs. Trouble Sleeping
 ```{r}
-dat |>
+prot_trouble <- dat |>
+  mutate(SLQ050 = as.factor(SLQ050)) |>
   ggplot(aes(x = DR1TPROT, y = SLQ050)) +
-  geom_jitter(alpha = 0.7) +
-  ylab("Ever Told the Doctor You Had Trouble Sleeping")
+  geom_boxplot() +
+  ylab("")
 
 summary(lm(SLQ050 ~ DR1TPROT, data = dat)) # not significant
 
-dat |>
+carb_trouble <- dat |>
+  mutate(SLQ050 = as.factor(SLQ050)) |>
   ggplot(aes(x = DR1TCARB, y = SLQ050)) +
-  geom_jitter(alpha = 0.7) +
-  ylab("Ever Told the Doctor You Had Trouble Sleeping")
+  geom_boxplot() +
+  ylab("")
 
 summary(lm(SLQ050 ~ DR1TCARB, data = dat)) # significant, +
 
-dat |>
+fat_trouble <- dat |>
+  mutate(SLQ050 = as.factor(SLQ050)) |>
   ggplot(aes(x = DR1TTFAT, y = SLQ050)) +
-  geom_jitter(alpha = 0.7) +
-  ylab("Ever Told the Doctor You Had Trouble Sleeping")
+  geom_boxplot() +
+  ylab("")
 
 summary(lm(SLQ050 ~ DR1TTFAT, data = dat)) # not significant
 
-dat |>
+fibe_trouble <- dat |>
+  mutate(SLQ050 = as.factor(SLQ050)) |>
   ggplot(aes(x = DR1TFIBE, y = SLQ050)) +
-  geom_jitter(alpha = 0.7) +
-  ylab("Ever Told the Doctor You Had Trouble Sleeping")
+  geom_boxplot() +
+  ylab("")
 
 summary(lm(SLQ050 ~ DR1TFIBE, data = dat)) # significant, +
+
+yleft_trouble = richtext_grob("Ever Told the Doctor You Had Trouble Sleeping", rot=90)
+
+grid.arrange(prot_trouble, carb_trouble, fat_trouble, fibe_trouble, ncol=2, nrow =2, left = yleft_trouble)
 ```
 
+# Temporal Eating Habits vs. Sleep Quality
+## Meal Time vs. Weekday Sleep
+```{r}
+breakfast_weekday <- dat2 |>
+  filter(DR1_030Z == 1) |>
+  ggplot(aes(x = DR1_020, y = SLD012)) +
+  geom_point() +
+  ylab("") +
+  xlab("Breakfast Time")
+
+summary(lm(SLD012 ~ DR1_020, data = dat2_breakfast)) # significant, +
+
+lunch_weekday <- dat2 |>
+  filter(DR1_030Z == 2) |>
+  ggplot(aes(x = DR1_020, y = SLD012)) +
+  geom_point() +
+  ylab("") +
+  xlab("Lunch Time")
+
+summary(lm(SLD012 ~ DR1_020, data = dat2_lunch)) # significant, +
+
+dinner_weekday <- dat2 |>
+  filter(DR1_030Z == 3) |>
+  ggplot(aes(x = DR1_020, y = SLD012)) +
+  geom_point() +
+  ylab("") +
+  xlab("Dinner Time")
+
+summary(lm(SLD012 ~ DR1_020, data = dat2_dinner)) # not significant
+
+yleft_meal_weekday = richtext_grob("Hours of Sleep on Weekdays", rot=90)
+
+grid.arrange(breakfast_weekday, lunch_weekday, dinner_weekday, ncol=2, nrow =2, left = yleft_meal_weekday)
+```
+
+## Meal Time vs. Weekend Sleep
+```{r}
+breakfast_weekend <- dat2 |>
+  filter(DR1_030Z == 1) |>
+  ggplot(aes(x = DR1_020, y = SLD013)) +
+  geom_point() +
+  ylab("") +
+  xlab("Breakfast Time")
+
+summary(lm(SLD013 ~ DR1_020, data = dat2_breakfast)) # significant, +
+
+lunch_weekend <- dat2 |>
+  filter(DR1_030Z == 2) |>
+  ggplot(aes(x = DR1_020, y = SLD013)) +
+  geom_point() +
+  ylab("") +
+  xlab("Lunch Time")
+
+summary(lm(SLD013 ~ DR1_020, data = dat2_lunch)) # significant, +
+
+dinner_weekend <- dat2 |>
+  filter(DR1_030Z == 3) |>
+  ggplot(aes(x = DR1_020, y = SLD013)) +
+  geom_point() +
+  ylab("") +
+  xlab("Dinner Time")
+
+summary(lm(SLD013 ~ DR1_020, data = dat2_dinner)) # not significant
+
+yleft_meal_weekend = richtext_grob("Hours of Sleep on Weekends", rot=90)
+
+grid.arrange(breakfast_weekend, lunch_weekend, dinner_weekend, ncol=2, nrow =2, left = yleft_meal_weekend)
+```
+
+## Meal Time vs. Feeling Overly Sleepy During the Day
+```{r}
+breakfast_sleepy <- dat2 |>
+  filter(DR1_030Z == 1) |>
+  mutate(SLQ120 = as.factor(SLQ120)) |>
+  ggplot(aes(x = DR1_020, y = SLQ120)) +
+  geom_boxplot() +
+  ylab("") +
+  xlab("Breakfast Time")
+
+summary(lm(SLQ120 ~ DR1_020, data = dat2_breakfast)) # significant, +
+
+lunch_sleepy <- dat2 |>
+  filter(DR1_030Z == 2) |>
+  mutate(SLQ120 = as.factor(SLQ120)) |>
+  ggplot(aes(x = DR1_020, y = SLQ120)) +
+  geom_boxplot() +
+  ylab("") +
+  xlab("Lunch Time")
+
+summary(lm(SLQ120 ~ DR1_020, data = dat2_lunch)) # not significant
+
+dinner_sleepy <- dat2 |>
+  filter(DR1_030Z == 3) |>
+  mutate(SLQ120 = as.factor(SLQ120)) |>
+  ggplot(aes(x = DR1_020, y = SLQ120)) +
+  geom_boxplot() +
+  ylab("") +
+  xlab("Dinner Time")
+
+summary(lm(SLQ120 ~ DR1_020, data = dat2_dinner)) # significant, -
+
+yleft_meal_sleepy = richtext_grob("Feeling Overly Sleepy During the Day", rot=90)
+
+grid.arrange(breakfast_sleepy, lunch_sleepy, dinner_sleepy, ncol=2, nrow =2, left = yleft_meal_sleepy)
+```
+
+## Meal Time vs. Trouble Sleeping
+```{r}
+breakfast_trouble <- dat2 |>
+  filter(DR1_030Z == 1) |>
+  mutate(SLQ050 = as.factor(SLQ050)) |>
+  ggplot(aes(x = DR1_020, y = SLQ050)) +
+  geom_boxplot() +
+  ylab("") +
+  xlab("Breakfast Time")
+
+summary(lm(SLQ050 ~ DR1_020, data = dat2_breakfast)) # significant, +
+
+lunch_trouble <- dat2 |>
+  filter(DR1_030Z == 2) |>
+  mutate(SLQ050 = as.factor(SLQ050)) |>
+  ggplot(aes(x = DR1_020, y = SLQ050)) +
+  geom_boxplot() +
+  ylab("") +
+  xlab("Lunch Time")
+
+summary(lm(SLQ050 ~ DR1_020, data = dat2_lunch)) # not significant
+
+dinner_trouble <- dat2 |>
+  filter(DR1_030Z == 3) |>
+  mutate(SLQ050 = as.factor(SLQ050)) |>
+  ggplot(aes(x = DR1_020, y = SLQ050)) +
+  geom_boxplot() +
+  ylab("") +
+  xlab("Dinner Time")
+
+summary(lm(SLQ050 ~ DR1_020, data = dat2_dinner)) # significant, +
+
+yleft_meal_trouble = richtext_grob("Ever Told the Doctor You Had Trouble Sleeping", rot=90)
+
+grid.arrange(breakfast_trouble, lunch_trouble, dinner_trouble, ncol=2, nrow =2, left = yleft_meal_trouble)
+```
+
+# Number of Hours Awake vs. Sleep Quality
+```{r}
+awake <- sleep |>
+  mutate(hours_awake_weekdays = 24 - SLD012,
+         hours_awake_weekends = 24 - SLD013)
+
+awake |>
+  mutate(SLQ120 = as.factor(SLQ120)) |>
+  ggplot(aes(x = hours_awake_weekdays, y = SLQ120)) +
+  geom_boxplot() +
+  ylab("Feeling Overly Sleepy During the Day") +
+  xlab("Hours Awake on Weekdays")
+
+summary(lm(SLQ120 ~ hours_awake_weekdays, data = awake)) # not significant
+
+awake |>
+  mutate(SLQ050 = as.factor(SLQ050)) |>
+  ggplot(aes(x = hours_awake_weekdays, y = SLQ050)) +
+  geom_boxplot() +
+  ylab("Ever Told the Doctor You Had Trouble Sleeping") +
+  xlab("Hours Awake on Weekdays")
+
+summary(lm(SLQ050 ~ hours_awake_weekdays, data = awake)) # significant, -
+
+awake |>
+  mutate(SLQ120 = as.factor(SLQ120)) |>
+  ggplot(aes(x = hours_awake_weekends, y = SLQ120)) +
+  geom_boxplot() +
+  ylab("Feeling Overly Sleepy During the Day") +
+  xlab("Hours Awake on Weekends")
+
+summary(lm(SLQ120 ~ hours_awake_weekends, data = awake)) # not significant
+
+awake |>
+  mutate(SLQ050 = as.factor(SLQ050)) |>
+  ggplot(aes(x = hours_awake_weekends, y = SLQ050)) +
+  geom_boxplot() +
+  ylab("Ever Told the Doctor You Had Trouble Sleeping") +
+  xlab("Hours Awake on Weekends")
+
+summary(lm(SLQ050 ~ hours_awake_weekends, data = awake)) # significant, -
+```
