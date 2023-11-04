@@ -19,6 +19,19 @@ demo <- read_xpt("data/DEMO_J.XPT")
 ```{r}
 data <- left_join(sleep, diet_total, by = "SEQN")
 data <- left_join(data, demo, by = "SEQN")
+data <- data %>%
+  select(SEQN, #identifier
+         SLD012, SLD013, SLQ050, SLQ120, #sleep questions: weekday hrs, weeknd hr, doctor question, overly sleepy?
+         WTDRD1, DR1DRSTZ, #dietary weight and dietary recall status
+         DR1TKCAL, DR1TPROT, DR1TCARB, DR1TSUGR, DR1TFIBE, DR1TTFAT, #diet
+         RIAGENDR, RIDAGEYR, RIDRETH1, RIDRETH3, #gender, age in yrs, ethnicity, ethnicity w/ NH Asian
+         DMDBORN4, #born in US?
+         DMDMARTL, INDFMPIR, #Marital status, household ref. of martial status
+         DMDHHSIZ, DMDHHSZA, # of people in HH and # of children 5 years or younger in HH
+         DMDHHSZB, # of children 6-17 years old in HH
+         DMDHHSZE, # of adults 60 years or older in HH
+         INDHHIN2, INDFMIN2, INDFMPIR #Annual household income, annual family income, and ratio of family income to poverty
+  )
 ```
 
 ```{r}
