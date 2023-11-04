@@ -10,10 +10,15 @@ library(tidyverse)
 ```
 
 ```{r}
-sleep <- read_xpt("SLQ_J.XPT")
-diet_intake <- read_xpt("DR1IFF_J.XPT")
-diet_total <- read_xpt("DR1TOT_J.XPT")
-demo <- read_xpt("DEMO_J.XPT")
+sleep <- read_xpt("data/SLQ_J.XPT")
+diet_intake <- read_xpt("data/DR1IFF_J.XPT")
+diet_total <- read_xpt("data/DR1TOT_J.XPT")
+demo <- read_xpt("data/DEMO_J.XPT")
+```
+
+```{r}
+data <- left_join(sleep, diet_total, by = "SEQN")
+data <- left_join(data, demo, by = "SEQN")
 ```
 
 ```{r}
