@@ -32,7 +32,55 @@ data <- data %>%
          DMDHHSZE, # of adults 60 years or older in HH
          INDHHIN2, INDFMIN2, INDFMPIR #Annual household income, annual family income, and ratio of family income to poverty
   )
+
+factorCols <- c("SLQ050", "SLQ120", 
+                "DR1DRSTZ", "RIAGENDR", "RIDRETH1", "RIDRETH3", "DMDBORN4", "DMDMARTL", "DMDHRMAZ",
+                "INDHHIN2", "INDFMIN2")
+data[factorCols] <- lapply(data[factorCols], factor)
+data[factorCols] <- droplevels(data[factorCols])
 ```
+
+```{r}
+set.seed(17)
+lambda_grid <- .2 ^ (-50:50)
+
+# Prepare X matrix (minus outcome, other sleep outcomes, seqn, weights, and status) for input to glmnet
+temp <- data %>%
+  select(SLD012,
+         WTDRD1, #weights
+         DR1TKCAL, DR1TPROT, DR1TCARB, DR1TSUGR, DR1TFIBE, DR1TTFAT, #diet
+         RIAGENDR, RIDAGEYR, RIDRETH1, RIDRETH3, #gender, age in yrs, ethnicity, ethnicity w/ NH Asian
+         DMDBORN4, #born in US?
+         DMDHRMAZ, #household ref. of martial status
+         DMDHHSIZ, DMDHHSZA, # of people in HH and # of children 5 years or younger in HH
+         DMDHHSZB, # of children 6-17 years old in HH
+         DMDHHSZE, # of adults 60 years or older in HH
+         INDFMIN2, INDFMPIR)
+
+temp <- temp[complete.cases(temp),]
+
+x <- model.matrix(SLD012~DR1TKCAL+ DR1TPROT+ DR1TCARB+ DR1TSUGR+ DR1TFIBE+ DR1TTFAT, data=temp)[,-c(1)]
+y <- temp$SLD012
+names(x)<- names(temp)[-1]
+
+# Elastic Net
+EN.fram = glmnet(x, y, 
+                 alpha=0.5, 
+                 family="gaussian",
+                 weights = temp$WTDRD1,
+                 lambda=lambda_grid, 
+                 data=temp,
+                 )
+vip(EN.fram, num_features=35, geom="point", include_type=TRUE)
+par(mfrow=c(1,2))
+plot(EN.fram)
+cv.EN <- cv.glmnet(x,y, alpha=0.5, family="gaussian")
+plot(cv.EN)
+lambda_min <- cv.EN$lambda.min
+lambda_1se <- cv.EN$lambda.1se
+coef(cv.EN,s=lambda_1se)
+```
+
 
 ```{r}
 # Exploration of missing data 
