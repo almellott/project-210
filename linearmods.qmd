@@ -55,22 +55,18 @@ full_mod <- lm(SLD012 ~ WTDRD1 + DR1TKCAL + DR1TPROT + DR1TCARB + DR1TSUGR + DR1
                data=temp)
 mod_back <- step(full_mod, direction = "backward")
 summary(mod_back)
-# DR1TPROT, DR1TSUGR, DR1TFIBE, RIAGENDR, RIDAGEYR, RIDRETH3, DMDMARTL, INDFMPIR, DMDHHSZE
-
-linmod <- lm(SLD012 ~ DR1TPROT + DR1TSUGR + DR1TFIBE + RIAGENDR + RIDAGEYR + RIDRETH3 + DMDMARTL + INDFMPIR + DMDHHSZE,
-               data=temp)
 
 library(ggfortify)
-autoplot(linmod)
+autoplot(mod_back)
 # heteroscedastic
 
 #find Cook's distance for each observation in the dataset
-cooksD <- cooks.distance(linmod)
+cooksD <- cooks.distance(mod_back)
 
 # Plot Cook's Distance with a horizontal line at 4/n to see which observations exceed this threshold
 n <- nrow(temp)
 plot(cooksD, main = "Cooks Distance for Influential Obs")
-abline(h = 0.00098, lty = 2, col = "red") # add cutoff line
+abline(h = 0.00098, lty = 2, lwd = 3, col = "red") # add cutoff line
 # many influential obs
 ```
 
