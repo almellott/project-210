@@ -30,7 +30,7 @@ data <- data %>%
          DR1TKCAL, DR1TPROT, DR1TCARB, DR1TSUGR, DR1TFIBE, DR1TTFAT, #diet
          RIAGENDR, RIDAGEYR, RIDRETH3, #gender, age in yrs, ethnicity w/ NH Asian
          DMDBORN4, #born in US?
-         DMDMARTL, INDFMPIR, #Marital status, ratio of family income to poverty
+         DMDMARTL, #Marital status
          DMDHRMAZ, #household ref. of martial status
          DMDHHSIZ, DMDHHSZA, # of people in HH and # of children 5 years or younger in HH
          DMDHHSZB, # of children 6-17 years old in HH
