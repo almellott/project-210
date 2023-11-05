@@ -41,6 +41,29 @@ data[factorCols] <- droplevels(data[factorCols])
 ```
 
 ```{r}
+#Poisson
+dataPois <- data %>%
+  filter(SLQ050 != "9" & SLQ120 != "9") %>%
+  mutate(SLQ120pois = as.numeric(SLQ120) - 1,
+         SLQ050pois = ifelse(SLQ050 == "1", 1, 0), #equals 1 if they respond yes thye told doctor
+         SLD012pois = ifelse(SLD012 < mean(SLD012, na.rm = TRUE), 1, 0),
+         sumsleep = SLQ120pois + SLQ050pois + SLD012pois) #equals 1 if below avg sleep hrs
+
+#mean-variance assumption
+dataPois %>%
+  summarize(meanSumSleep = mean(sumsleep, na.rm = T),
+            varSumSleep = var(sumsleep, na.rm = T))
+
+dataPois %>%
+  ggplot(aes(x = sumsleep)) + geom_histogram(bins = 7, fill = "cornflowerblue", color = "black") +
+  labs(y = "Frequency")
+
+glm_pois <- glm(sumsleep ~ DR1TKCAL + DR1TPROT + DR1TCARB + DR1TFIBE + DR1TTFAT, data= dataPois, family = poisson)
+summary(glm_pois)
+exp(summary(glm_pois)$coef)
+```
+
+```{r}
 set.seed(17)
 lambda_grid <- .2 ^ (-50:50)
 
