@@ -51,8 +51,9 @@ data[factorCols] <- droplevels(data[factorCols])
 
 temp <- data[complete.cases(data),]
 
-full_mod <- lm(SLD012 ~ WTDRD1 + DR1TKCAL + DR1TPROT + DR1TCARB + DR1TSUGR + DR1TFIBE + DR1TTFAT + RIAGENDR + RIDAGEYR + RIDRETH3 + DMDBORN4 + DMDMARTL + INDFMPIR + DMDHRMAZ + DMDHHSIZ + DMDHHSZA + DMDHHSZB + DMDHHSZE + INDHHIN2 + INDFMIN2 + INDFMPIR,
-               data=temp)
+full_mod <- lm(SLD012 ~ DR1TKCAL + DR1TPROT + DR1TCARB + DR1TSUGR + DR1TFIBE + DR1TTFAT + RIAGENDR + RIDAGEYR + RIDRETH3 + DMDBORN4 + DMDMARTL + INDFMPIR + DMDHRMAZ + DMDHHSIZ + DMDHHSZA + DMDHHSZB + DMDHHSZE + INDHHIN2 + INDFMIN2 + INDFMPIR,
+               data=temp,
+               weights = WTDRD1)
 mod_back <- step(full_mod, direction = "backward")
 summary(mod_back)
 
@@ -72,7 +73,11 @@ abline(h = 0.00098, lty = 2, lwd = 3, col = "red") # add cutoff line
 
 ```{r}
 library(car)
-vif(linmod) # minimal collinearity
+vif(mod_back) 
+# INDFMPIR: 4.207483
+# INDHHIN2: 2.084014
+# INDFMIN2: 2.586556
+# rest are below 2
 ```
 
 ```{r}
