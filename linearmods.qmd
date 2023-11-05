@@ -1,0 +1,155 @@
+---
+title: "Linear Modeling"
+format: html
+editor: visual
+---
+
+```{r}
+library(haven)
+library(tidyverse)
+```
+
+```{r}
+sleep <- read_xpt("data/SLQ_J.XPT")
+diet_intake <- read_xpt("data/DR1IFF_J.XPT")
+diet_total <- read_xpt("data/DR1TOT_J.XPT")
+demo <- read_xpt("data/DEMO_J.XPT")
+```
+
+```{r}
+data <- left_join(sleep, diet_total, by = "SEQN")
+data <- left_join(data, demo, by = "SEQN")
+
+
+# not using RIDRETH1
+
+data <- data %>%
+  select(SEQN, #identifier
+         SLD012, SLD013, SLQ050, SLQ120, #sleep questions: weekday hrs, weeknd hr, doctor question, overly sleepy?
+         WTDRD1, DR1DRSTZ, #dietary weight and dietary recall status
+         DR1TKCAL, DR1TPROT, DR1TCARB, DR1TSUGR, DR1TFIBE, DR1TTFAT, #diet
+         RIAGENDR, RIDAGEYR, RIDRETH3, #gender, age in yrs, ethnicity w/ NH Asian
+         DMDBORN4, #born in US?
+         DMDMARTL, INDFMPIR, #Marital status, ratio of family income to poverty
+         DMDHRMAZ, #household ref. of martial status
+         DMDHHSIZ, DMDHHSZA, # of people in HH and # of children 5 years or younger in HH
+         DMDHHSZB, # of children 6-17 years old in HH
+         DMDHHSZE, # of adults 60 years or older in HH
+         INDHHIN2, INDFMIN2, INDFMPIR #Annual household income, annual family income, and ratio of family income to poverty
+  )
+
+factorCols <- c("SLQ050", "SLQ120", 
+                "DR1DRSTZ", "RIAGENDR", "RIDRETH3", "DMDBORN4", "DMDMARTL", "DMDHRMAZ",
+                "INDHHIN2", "INDFMIN2")
+data[factorCols] <- lapply(data[factorCols], factor)
+data[factorCols] <- droplevels(data[factorCols])
+```
+
+```{r}
+# outcome: weekday sleep hours
+# this variable violates the LINE assumptions (L & E)
+
+temp <- data[complete.cases(data),]
+
+full_mod <- lm(SLD012 ~ WTDRD1 + DR1TKCAL + DR1TPROT + DR1TCARB + DR1TSUGR + DR1TFIBE + DR1TTFAT + RIAGENDR + RIDAGEYR + RIDRETH3 + DMDBORN4 + DMDMARTL + INDFMPIR + DMDHRMAZ + DMDHHSIZ + DMDHHSZA + DMDHHSZB + DMDHHSZE + INDHHIN2 + INDFMIN2 + INDFMPIR,
+               data=temp)
+mod_back <- step(full_mod, direction = "backward")
+summary(mod_back)
+# DR1TPROT, DR1TSUGR, DR1TFIBE, RIAGENDR, RIDAGEYR, RIDRETH3, DMDMARTL, INDFMPIR, DMDHHSZE
+
+linmod <- lm(SLD012 ~ DR1TPROT + DR1TSUGR + DR1TFIBE + RIAGENDR + RIDAGEYR + RIDRETH3 + DMDMARTL + INDFMPIR + DMDHHSZE,
+               data=temp)
+
+library(ggfortify)
+autoplot(linmod)
+# heteroscedastic
+
+#find Cook's distance for each observation in the dataset
+cooksD <- cooks.distance(linmod)
+
+# Plot Cook's Distance with a horizontal line at 4/n to see which observations exceed this threshold
+n <- nrow(temp)
+plot(cooksD, main = "Cooks Distance for Influential Obs")
+abline(h = 0.00098, lty = 2, col = "red") # add cutoff line
+# many influential obs
+```
+
+```{r}
+library(car)
+vif(linmod) # minimal collinearity
+```
+
+```{r}
+library(glmnet)
+library(vip) 
+
+set.seed(17)
+lambda_grid <- .2 ^ (-50:50)
+
+# Prepare X matrix (minus outcome, other sleep outcomes, seqn, weights, and status) for input to glmnet
+x <- model.matrix(SLD012~DR1TKCAL+ DR1TPROT+ DR1TCARB+ DR1TSUGR+ DR1TFIBE+ DR1TTFAT, data=temp)[,-c(1)]
+y <- temp$SLD012
+names(x)<- names(temp)[-1]
+
+# Ridge
+ridge.fram = glmnet(x,y, alpha=0,family="gaussian",
+                    lambda=lambda_grid, data=temp)
+#print(ridge.fram)
+vip(ridge.fram, num_features=12, geom="point", include_type=TRUE)
+par(mfrow=c(1,2))
+plot(ridge.fram)
+cv.ridge <- cv.glmnet(x,y, alpha=0, family="gaussian", data=temp)
+plot(cv.ridge)
+lambda_min <- cv.ridge$lambda.min
+lambda_1se <- cv.ridge$lambda.1se
+coef(cv.ridge,s=lambda_1se)
+
+# LASSO
+lasso.fram = glmnet(x,y, alpha=1,family="gaussian",
+                    lambda=lambda_grid, data=temp)
+vip(lasso.fram, num_features=12, geom="point", include_type=TRUE)
+par(mfrow=c(1,2))
+plot(lasso.fram)
+cv.lasso <- cv.glmnet(x,y, alpha=1, family="gaussian")
+plot(cv.lasso)
+lambda_min <- cv.lasso$lambda.min
+lambda_1se <- cv.lasso$lambda.1se
+coef(cv.lasso,s=lambda_1se)
+
+# Elastic Net
+EN.fram = glmnet(x, y, 
+                 alpha=0.5, 
+                 family="gaussian",
+                 weights = temp$WTDRD1,
+                 lambda=lambda_grid, 
+                 data=temp,
+                 )
+vip(EN.fram, num_features=35, geom="point", include_type=TRUE)
+par(mfrow=c(1,2))
+plot(EN.fram)
+cv.EN <- cv.glmnet(x,y, alpha=0.5, family="gaussian")
+plot(cv.EN)
+lambda_min <- cv.EN$lambda.min
+lambda_1se <- cv.EN$lambda.1se
+coef(cv.EN,s=lambda_1se)
+```
+
+```{r}
+par(mfrow=c(1,3))
+
+plot(ridge.fram)
+plot(lasso.fram)
+plot(EN.fram)
+# ridge keeps 6; LASSO and elastic net keeps 4
+# 
+
+plot(cv.ridge)
+plot(cv.lasso)
+plot(cv.EN)
+
+out <- cbind(coef(cv.ridge,s=lambda_1se),coef(cv.lasso,s=lambda_1se),
+             coef(cv.EN,s=lambda_1se))
+colnames(out) <- c("Ridge", "LASSO", "EN")
+out
+```
+
