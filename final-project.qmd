@@ -34,7 +34,7 @@ data <- data %>%
   )
 
 factorCols <- c("SLQ050", "SLQ120", 
-                "DR1DRSTZ", "RIAGENDR", "RIDRETH1", "RIDRETH3", "DMDBORN4", "DMDMARTL", "DMDHRMAZ",
+                "DR1DRSTZ", "RIAGENDR", "RIDRETH1", "RIDRETH3", "DMDBORN4", "DMDMARTL",
                 "INDHHIN2", "INDFMIN2")
 data[factorCols] <- lapply(data[factorCols], factor)
 data[factorCols] <- droplevels(data[factorCols])
@@ -254,3 +254,58 @@ ggplot(long_diet, aes(x = Value, fill = factor(RIAGENDR))) +
   ) +
   theme_minimal()
 ```
+
+```{r}
+# Data preparation for SLQ050 (have you ever told a doctor about sleeping problems?) analysis
+dat = data %>% 
+  select(DR1TKCAL,DR1TPROT,DR1TCARB,DR1TTFAT,
+         DR1TFIBE,DR1TSUGR,RIAGENDR,DMDMARTL,
+         DMDHHSIZ,DMDHHSZE,SLQ050, ) %>%
+  mutate(GENDRFEMALE = as.numeric(RIAGENDR) - 1) %>% 
+  select(-RIAGENDR) %>%
+  filter(SLQ050 != 9) %>% 
+  mutate(SLQ050 = as.numeric(SLQ050) - 1) %>% 
+  as.data.frame()
+
+logistic1 = glm(SLQ050 ~ DR1TKCAL + DR1TPROT + DR1TCARB +
+                 DR1TTFAT + DR1TFIBE, 
+               data = dat, 
+               family = "binomial")
+
+
+
+logistic2 = glm(SLQ050 ~ DR1TKCAL + DR1TPROT + DR1TCARB +
+                 DR1TTFAT + DR1TFIBE + DR1TSUGR + GENDRFEMALE +
+                 as.factor(DMDMARTL) + DMDHHSIZ + DMDHHSZE, 
+               data = dat, 
+               family = "binomial")
+
+summary(logistic1)
+summary(logistic2)
+
+logOR.scale<-summary(logistic)$coefficients
+OR.scale<-exp(cbind(OR = coef(logistic), confint(logistic)))
+cbind(OR.scale,logOR.scale)
+plot(logistic, which=1:6)
+```
+
+```{r}
+logistic2 = glm(SLQ050 ~ DR1TKCAL + DR1TPROT + DR1TCARB +
+                 DR1TTFAT + DR1TFIBE + DR1TSUGR + GENDRFEMALE +
+                 DMDHHSIZ, 
+               data = dat, 
+               family = "binomial")
+
+summary(logistic2)
+
+logOR2.scale<-summary(logistic2)$coefficients
+OR2.scale<-exp(cbind(OR = coef(logistic2), confint(logistic2)))
+cbind(OR2.scale,logOR2.scale)
+plot(logistic2, which=1:6)
+
+data.frame(exp(logistic2$coefficients*10))
+data.frame(exp(logistic2$coefficients*100))
+
+anova(logistic1,logistic2,test = "Chisq")
+```
+
