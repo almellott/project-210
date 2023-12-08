@@ -3,8 +3,12 @@ title: "Confounding"
 format: html
 editor: visual
 ---
+```{r}
+library(nnet)
+```
 
 ```{r}
+# Construct a data frame containing sleep, macronutrient and demographic data
 data_confounding <- left_join(sleep, diet_total, by = "SEQN")
 data_confounding <- left_join(data_confounding, demo, by = "SEQN")
 data_confounding <- data_confounding %>%
@@ -20,29 +24,71 @@ data_confounding <- data_confounding %>%
          DMDHHSZE, # of adults 60 years or older in HH
          INDHHIN2, INDFMIN2, INDFMPIR #Annual household income, annual family income, and ratio of family income to poverty
   )
-y <- data_confounding %>% select(SLD012)
-x <- data_confounding %>% select(-SEQN,-SLD012,-SLD013,-SLQ050,-SLQ120, -WTDRD1, -DR1DRSTZ, -DR1TCARB, -DR1TFIBE, -DR1TKCAL, -DR1TSUGR, -DR1TTFAT, -DR1TPROT)
+```
+
+```{r}
+# Explore associations between demographics and sleep outcome SLD012 (sleep duration on weekdays)
+
+temp <- data_confounding %>% select(-SEQN,-SLD013,-SLQ050,-SLQ120, -WTDRD1, -DR1DRSTZ, -DR1TCARB, -DR1TFIBE, -DR1TKCAL, -DR1TSUGR, -DR1TTFAT, -DR1TPROT)
 weights <- data_confounding %>% pull(WTDRD1)
 
-confounding_model.SLD012 <- lm(SLD012 ~ ., data = cbind(y, x), weights = weights)
+confounding_model.SLD012 <- lm(SLD012 ~ ., data = temp, weights = weights)
 summary(confounding_model.SLD012)
+```
 
-y <- data_confounding %>% select(SLD013)
-confounding_model.SLD013 <- lm(SLD013 ~ ., data = cbind(y, x), weights = weights)
+```{r}
+# Explore associations between demographics and sleep outcome SLD012 (sleep duration on weekends)
+
+temp <- data_confounding %>% select(-SEQN,-SLD012,-SLQ050,-SLQ120, -WTDRD1, -DR1DRSTZ, -DR1TCARB, -DR1TFIBE, -DR1TKCAL, -DR1TSUGR, -DR1TTFAT, -DR1TPROT)
+confounding_model.SLD013 <- lm(SLD013 ~ ., data = temp, weights = weights)
 summary(confounding_model.SLD013)
+```
 
-y <- data_confounding %>% select(SLQ050)
-temp <- cbind(y, x) %>% 
+```{r}
+# Explore associations between demographics and sleep outcome SLQ050 (telling your doctor about sleeping problems)
+temp <- data_confounding %>% select(-SEQN,-SLD012,-SLD013,-SLQ120, -WTDRD1, -DR1DRSTZ, -DR1TCARB, -DR1TFIBE, -DR1TKCAL, -DR1TSUGR, -DR1TTFAT, -DR1TPROT)
+
+temp <- temp %>% 
   filter(SLQ050 != 9) %>% 
   mutate(SLQ050 = as.numeric(SLQ050) - 1)
 
-y <- temp %>% select(SLQ050)
-x <- temp %>% select(-SLQ050)
 confounding_model.SLQ050 <- glm(SLQ050 ~ ., data = temp, family = "binomial")
 summary(confounding_model.SLQ050)
 ```
 
 ```{r}
-#| echo: false
-2 * 2
+# Explore associations between demographics and sleep outcome SLQ120 (how many times a month they feel overly sleepy)
+temp <- data_confounding %>% select(-SEQN,-SLD012,-SLD013,-SLQ050, -WTDRD1, -DR1DRSTZ, -DR1TCARB, -DR1TFIBE, -DR1TKCAL, -DR1TSUGR, -DR1TTFAT, -DR1TPROT)
+
+temp <- temp %>% 
+  filter(SLQ120 %in% c(0,1,2,3,4)) 
+
+confounding_model.SLQ120 <- multinom(SLQ120 ~ ., data = temp)
+#summary(confounding_model.SLQ120)
+
+summ.MNfit <- function(fit, digits=3){
+  s <- summary(fit)
+  for(i in 2:length(fit$lev))
+    {
+    ##
+    cat("\nLevel", fit$lev[i], "vs. Level", fit$lev[1], "\n")
+    ##
+    betaHat <- s$coefficients[(i-1),]
+    se <- s$standard.errors[(i-1),]
+    zStat <- betaHat / se
+    pval <- 2 * pnorm(abs(zStat), lower.tail=FALSE)
+    ##
+    RRR <- exp(betaHat)
+    RRR.lower <- exp(betaHat - qnorm(0.975)*se)
+    RRR.upper <- exp(betaHat + qnorm(0.975)*se)
+    ##
+    results <- cbind(betaHat, se, pval, RRR, RRR.lower, RRR.upper)
+    print(round(results, digits=digits))
+    }
+}
+summ.MNfit(confounding_model.SLQ120)
+```
+
+```{r}
+
 ```
