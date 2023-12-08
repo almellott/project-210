@@ -1,0 +1,48 @@
+---
+title: "Confounding"
+format: html
+editor: visual
+---
+
+```{r}
+data_confounding <- left_join(sleep, diet_total, by = "SEQN")
+data_confounding <- left_join(data_confounding, demo, by = "SEQN")
+data_confounding <- data_confounding %>%
+  select(SEQN, #identifier
+         SLD012, SLD013, SLQ050, SLQ120, #sleep questions: weekday hrs, weeknd hr, doctor question, overly sleepy?
+         WTDRD1, DR1DRSTZ, #dietary weight and dietary recall status
+         DR1TKCAL, DR1TPROT, DR1TCARB, DR1TSUGR, DR1TFIBE, DR1TTFAT, #diet
+         RIAGENDR, RIDAGEYR, RIDRETH1, RIDRETH3, #gender, age in yrs, ethnicity, ethnicity w/ NH Asian
+         DMDBORN4, #born in US?
+         DMDMARTL, INDFMPIR, #Marital status, household ref. of martial status
+         DMDHHSIZ, DMDHHSZA, # of people in HH and # of children 5 years or younger in HH
+         DMDHHSZB, # of children 6-17 years old in HH
+         DMDHHSZE, # of adults 60 years or older in HH
+         INDHHIN2, INDFMIN2, INDFMPIR #Annual household income, annual family income, and ratio of family income to poverty
+  )
+y <- data_confounding %>% select(SLD012)
+x <- data_confounding %>% select(-SEQN,-SLD012,-SLD013,-SLQ050,-SLQ120, -WTDRD1, -DR1DRSTZ, -DR1TCARB, -DR1TFIBE, -DR1TKCAL, -DR1TSUGR, -DR1TTFAT, -DR1TPROT)
+weights <- data_confounding %>% pull(WTDRD1)
+
+confounding_model.SLD012 <- lm(SLD012 ~ ., data = cbind(y, x), weights = weights)
+summary(confounding_model.SLD012)
+
+y <- data_confounding %>% select(SLD013)
+confounding_model.SLD013 <- lm(SLD013 ~ ., data = cbind(y, x), weights = weights)
+summary(confounding_model.SLD013)
+
+y <- data_confounding %>% select(SLQ050)
+temp <- cbind(y, x) %>% 
+  filter(SLQ050 != 9) %>% 
+  mutate(SLQ050 = as.numeric(SLQ050) - 1)
+
+y <- temp %>% select(SLQ050)
+x <- temp %>% select(-SLQ050)
+confounding_model.SLQ050 <- glm(SLQ050 ~ ., data = temp, family = "binomial")
+summary(confounding_model.SLQ050)
+```
+
+```{r}
+#| echo: false
+2 * 2
+```
