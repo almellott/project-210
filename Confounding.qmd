@@ -18,18 +18,35 @@ data_confounding <- data_confounding %>%
          DR1TKCAL, DR1TPROT, DR1TCARB, DR1TSUGR, DR1TFIBE, DR1TTFAT, #diet
          RIAGENDR, RIDAGEYR, RIDRETH1, RIDRETH3, #gender, age in yrs, ethnicity, ethnicity w/ NH Asian
          DMDBORN4, #born in US?
-         DMDMARTL, INDFMPIR, #Marital status, household ref. of martial status
+         DMDMARTL, #Marital status, household ref. of martial status
          DMDHHSIZ, DMDHHSZA, # of people in HH and # of children 5 years or younger in HH
          DMDHHSZB, # of children 6-17 years old in HH
          DMDHHSZE, # of adults 60 years or older in HH
          INDHHIN2, INDFMIN2, INDFMPIR #Annual household income, annual family income, and ratio of family income to poverty
   )
+
+# data preprocessing
+data_confounding$SLQ050[data_confounding$SLQ050 == 9] <- NA
+data_confounding$SLQ120[data_confounding$SLQ120 == 9] <- NA
+data_confounding$DR1DRSTZ[data_confounding$DR1DRSTZ == 2] <- NA
+data_confounding$DMDBORN4[data_confounding$DMDBORN4 == 77] <- NA
+data_confounding$DMDBORN4[data_confounding$DMDBORN4 == 99] <- NA
+data_confounding$DMDMARTL[data_confounding$DMDMARTL == 77] <- NA
+data_confounding$DMDMARTL[data_confounding$DMDMARTL == 99] <- NA
+data_confounding$INDHHIN2[data_confounding$INDHHIN2 == 77] <- NA
+data_confounding$INDHHIN2[data_confounding$INDHHIN2 == 99] <- NA
+data_confounding$INDFMIN2[data_confounding$INDFMIN2 == 77] <- NA
+data_confounding$INDFMIN2[data_confounding$INDFMIN2 == 99] <- NA
+data_confounding$INDFMPIR[data_confounding$INDFMPIR == 77] <- NA
+data_confounding$INDFMPIR[data_confounding$INDFMPIR == 99] <- NA
+
+data_confounding <- data_confounding %>% mutate(DMDBORN4 = as.factor(DMDBORN4), DMDMARTL = as.factor(DMDMARTL), RIDRETH1 = as.factor(RIDRETH1), RIDRETH3 = as.factor(RIDRETH3))
 ```
 
 ```{r}
 # Explore associations between demographics and sleep outcome SLD012 (sleep duration on weekdays)
 
-temp <- data_confounding %>% select(-SEQN,-SLD013,-SLQ050,-SLQ120, -WTDRD1, -DR1DRSTZ, -DR1TCARB, -DR1TFIBE, -DR1TKCAL, -DR1TSUGR, -DR1TTFAT, -DR1TPROT)
+temp <- data_confounding %>% select(-SEQN,-SLD013,-SLQ050,-SLQ120, -WTDRD1, -DR1DRSTZ, -DR1TCARB, -DR1TFIBE, -DR1TKCAL, -DR1TSUGR, -DR1TTFAT, -DR1TPROT) 
 weights <- data_confounding %>% pull(WTDRD1)
 
 confounding_model.SLD012 <- lm(SLD012 ~ ., data = temp, weights = weights)
@@ -90,5 +107,60 @@ summ.MNfit(confounding_model.SLQ120)
 ```
 
 ```{r}
+# Explore associations between demographics and kcal predictor DR1TKCAL
 
+temp <- data_confounding %>% select(-SEQN,-SLD012, -SLD013,-SLQ050,-SLQ120, -WTDRD1, -DR1DRSTZ, -DR1TCARB, -DR1TFIBE, -DR1TSUGR, -DR1TTFAT, -DR1TPROT)
+weights <- data_confounding %>% pull(WTDRD1)
+
+confounding_model.DR1TKCAL <- lm(DR1TKCAL ~ ., data = temp, weights = weights)
+summary(confounding_model.DR1TKCAL)
+```
+
+```{r}
+# Explore associations between demographics and carb predictor DR1TCARB
+
+temp <- data_confounding %>% select(-SEQN,-SLD012, -SLD013,-SLQ050,-SLQ120, -WTDRD1, -DR1DRSTZ, -DR1TKCAL, -DR1TFIBE, -DR1TSUGR, -DR1TTFAT, -DR1TPROT)
+weights <- data_confounding %>% pull(WTDRD1)
+
+confounding_model.DR1TCARB <- lm(DR1TCARB ~ ., data = temp, weights = weights)
+summary(confounding_model.DR1TCARB)
+```
+```{r}
+# Explore associations between demographics and prot predictor DR1TPROT
+
+temp <- data_confounding %>% select(-SEQN,-SLD012, -SLD013,-SLQ050,-SLQ120, -WTDRD1, -DR1DRSTZ, -DR1TKCAL, -DR1TFIBE, -DR1TSUGR, -DR1TTFAT, -DR1TCARB)
+weights <- data_confounding %>% pull(WTDRD1)
+
+confounding_model.DR1TPROT <- lm(DR1TPROT ~ ., data = temp, weights = weights)
+summary(confounding_model.DR1TPROT)
+```
+
+```{r}
+# Explore associations between demographics and total fat predictor DR1TTFAT
+
+temp <- data_confounding %>% select(-SEQN,-SLD012, -SLD013,-SLQ050,-SLQ120, -WTDRD1, -DR1DRSTZ, -DR1TKCAL, -DR1TFIBE, -DR1TSUGR, -DR1TCARB, -DR1TPROT)
+weights <- data_confounding %>% pull(WTDRD1)
+
+confounding_model.DR1TTFAT <- lm(DR1TTFAT ~ ., data = temp, weights = weights)
+summary(confounding_model.DR1TTFAT)
+```
+
+```{r}
+# Explore associations between demographics and fiber predictor DR1TFIBE
+
+temp <- data_confounding %>% select(-SEQN,-SLD012, -SLD013,-SLQ050,-SLQ120, -WTDRD1, -DR1DRSTZ, -DR1TKCAL, -DR1TCARB, -DR1TSUGR, -DR1TTFAT, -DR1TPROT)
+weights <- data_confounding %>% pull(WTDRD1)
+
+confounding_model.DR1TFIBE <- lm(DR1TFIBE ~ ., data = temp, weights = weights)
+summary(confounding_model.DR1TFIBE)
+```
+
+```{r}
+# Explore associations between demographics and sugar predictor DR1TSUGR
+
+temp <- data_confounding %>% select(-SEQN,-SLD012, -SLD013,-SLQ050,-SLQ120, -WTDRD1, -DR1DRSTZ, -DR1TKCAL, -DR1TCARB, -DR1TFIBE, -DR1TTFAT, -DR1TPROT)
+weights <- data_confounding %>% pull(WTDRD1)
+
+confounding_model.DR1TSUGR <- lm(DR1TSUGR ~ ., data = temp, weights = weights)
+summary(confounding_model.DR1TSUGR)
 ```
