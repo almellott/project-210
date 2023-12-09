@@ -164,3 +164,108 @@ weights <- data_confounding %>% pull(WTDRD1)
 confounding_model.DR1TSUGR <- lm(DR1TSUGR ~ ., data = temp, weights = weights)
 summary(confounding_model.DR1TSUGR)
 ```
+
+```{r}
+# Operational check for gender confounding
+temp <- data_confounding %>% select(SLD012, DR1TKCAL, DR1TCARB, DR1TFIBE, DR1TTFAT, DR1TPROT, DR1TSUGR)
+weights <- data_confounding %>% pull(WTDRD1)
+
+confounding_model.op_reduced <- lm(SLD012~ ., data = temp, weights = weights)
+
+temp <- temp %>% mutate(RIAGENDR = data_confounding$RIAGENDR)
+confounding_model.op_RIAGENDR <- lm(SLD012~ ., data = temp, weights = weights)
+
+original_coefficients <- confounding_model.op_reduced$coefficients[2:7]
+
+adjusted_coefficients <-  confounding_model.op_RIAGENDR$coefficients[2:7]
+
+100 * (original_coefficients - adjusted_coefficients) / original_coefficients
+```
+
+```{r}
+# Operational check for age confounding
+temp <- data_confounding %>% select(SLD012, DR1TKCAL, DR1TCARB, DR1TFIBE, DR1TTFAT, DR1TPROT, DR1TSUGR, RIDAGEYR)
+
+confounding_model.op_RIAGENDR <- lm(SLD012~ ., data = temp, weights = weights)
+
+adjusted_coefficients <-  confounding_model.op_RIAGENDR$coefficients[2:7]
+
+100 * (original_coefficients - adjusted_coefficients) / original_coefficients
+```
+
+```{r}
+# Operational check for race confounding
+temp <- data_confounding %>% select(SLD012, DR1TKCAL, DR1TCARB, DR1TFIBE, DR1TTFAT, DR1TPROT, DR1TSUGR, RIDRETH1)
+
+confounding_model.op_RIDRETH1 <- lm(SLD012~ ., data = temp, weights = weights)
+
+adjusted_coefficients <-  confounding_model.op_RIDRETH1$coefficients[2:7]
+
+100 * (original_coefficients - adjusted_coefficients) / original_coefficients
+```
+
+```{r}
+# Operational check for born in the US confounding
+temp <- data_confounding %>% select(SLD012, DR1TKCAL, DR1TCARB, DR1TFIBE, DR1TTFAT, DR1TPROT, DR1TSUGR, DMDBORN4)
+
+confounding_model.op_DMDBORN4 <- lm(SLD012~ ., data = temp, weights = weights)
+
+adjusted_coefficients <-  confounding_model.op_DMDBORN4$coefficients[2:7]
+
+100 * (original_coefficients - adjusted_coefficients) / original_coefficients
+```
+
+```{r}
+# Operational check for marital status confounding
+temp <- data_confounding %>% select(SLD012, DR1TKCAL, DR1TCARB, DR1TFIBE, DR1TTFAT, DR1TPROT, DR1TSUGR, DMDMARTL)
+
+confounding_model.op_DMDMARTL <- lm(SLD012~ ., data = temp, weights = weights)
+
+adjusted_coefficients <-  confounding_model.op_DMDMARTL$coefficients[2:7]
+
+100 * (original_coefficients - adjusted_coefficients) / original_coefficients
+```
+
+```{r}
+# Operational check for household size confounding
+temp <- data_confounding %>% select(SLD012, DR1TKCAL, DR1TCARB, DR1TFIBE, DR1TTFAT, DR1TPROT, DR1TSUGR, DMDHHSIZ)
+
+confounding_model.op_DMDHHSIZ <- lm(SLD012~ ., data = temp, weights = weights)
+
+adjusted_coefficients <-  confounding_model.op_DMDHHSIZ$coefficients[2:7]
+
+100 * (original_coefficients - adjusted_coefficients) / original_coefficients
+```
+
+```{r}
+# Operational check for number of child under 5 confounding
+temp <- data_confounding %>% select(SLD012, DR1TKCAL, DR1TCARB, DR1TFIBE, DR1TTFAT, DR1TPROT, DR1TSUGR, DMDHHSZA)
+
+confounding_model.op_DMDHHSZA <- lm(SLD012~ ., data = temp, weights = weights)
+
+adjusted_coefficients <-  confounding_model.op_DMDHHSZA$coefficients[2:7]
+
+100 * (original_coefficients - adjusted_coefficients) / original_coefficients
+```
+
+```{r}
+# Operational check for household income confounding
+temp <- data_confounding %>% select(SLD012, DR1TKCAL, DR1TCARB, DR1TFIBE, DR1TTFAT, DR1TPROT, DR1TSUGR, INDHHIN2)
+
+confounding_model.op_INDHHIN2 <- lm(SLD012~ ., data = temp, weights = weights)
+
+adjusted_coefficients <-  confounding_model.op_INDHHIN2$coefficients[2:7]
+
+100 * (original_coefficients - adjusted_coefficients) / original_coefficients
+```
+
+```{r}
+# Operational check for number of child under 5 confounding
+temp <- data_confounding %>% select(SLD012, DR1TKCAL, DR1TCARB, DR1TFIBE, DR1TTFAT, DR1TPROT, DR1TSUGR, INDFMPIR)
+
+confounding_model.op_INDFMPIR <- lm(SLD012~ ., data = temp, weights = weights)
+
+adjusted_coefficients <-  confounding_model.op_INDFMPIR$coefficients[2:7]
+
+100 * (original_coefficients - adjusted_coefficients) / original_coefficients
+```
