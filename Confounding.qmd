@@ -40,7 +40,7 @@ data_confounding$INDFMIN2[data_confounding$INDFMIN2 == 99] <- NA
 data_confounding$INDFMPIR[data_confounding$INDFMPIR == 77] <- NA
 data_confounding$INDFMPIR[data_confounding$INDFMPIR == 99] <- NA
 
-data_confounding <- data_confounding %>% mutate(DMDBORN4 = as.factor(DMDBORN4), DMDMARTL = as.factor(DMDMARTL), RIDRETH1 = as.factor(RIDRETH1), RIDRETH3 = as.factor(RIDRETH3))
+data_confounding <- data_confounding %>% mutate(DMDBORN4 = as.integer(DMDBORN4) - 1, DMDMARTL = as.factor(DMDMARTL), RIDRETH1 = as.factor(RIDRETH1), RIDRETH3 = as.factor(RIDRETH3), SLQ050 = as.numeric(SLQ050) - 1)
 ```
 
 ```{r}
@@ -64,10 +64,6 @@ summary(confounding_model.SLD013)
 ```{r}
 # Explore associations between demographics and sleep outcome SLQ050 (telling your doctor about sleeping problems)
 temp <- data_confounding %>% select(-SEQN,-SLD012,-SLD013,-SLQ120, -WTDRD1, -DR1DRSTZ, -DR1TCARB, -DR1TFIBE, -DR1TKCAL, -DR1TSUGR, -DR1TTFAT, -DR1TPROT)
-
-temp <- temp %>% 
-  filter(SLQ050 != 9) %>% 
-  mutate(SLQ050 = as.numeric(SLQ050) - 1)
 
 confounding_model.SLQ050 <- glm(SLQ050 ~ ., data = temp, family = "binomial")
 summary(confounding_model.SLQ050)
@@ -167,7 +163,7 @@ summary(confounding_model.DR1TSUGR)
 
 ```{r}
 # Operational check for gender confounding
-temp <- data_confounding %>% select(SLD012, DR1TKCAL, DR1TCARB, DR1TFIBE, DR1TTFAT, DR1TPROT, DR1TSUGR)
+temp <- data_confounding %>% select(SLD012, DR1TCARB, DR1TFIBE, DR1TTFAT, DR1TPROT)
 weights <- data_confounding %>% pull(WTDRD1)
 
 confounding_model.op_reduced <- lm(SLD012~ ., data = temp, weights = weights)
@@ -184,7 +180,7 @@ adjusted_coefficients <-  confounding_model.op_RIAGENDR$coefficients[2:7]
 
 ```{r}
 # Operational check for age confounding
-temp <- data_confounding %>% select(SLD012, DR1TKCAL, DR1TCARB, DR1TFIBE, DR1TTFAT, DR1TPROT, DR1TSUGR, RIDAGEYR)
+temp <- data_confounding %>% select(SLD012, DR1TCARB, DR1TFIBE, DR1TTFAT, DR1TPROT, RIDAGEYR)
 
 confounding_model.op_RIAGENDR <- lm(SLD012~ ., data = temp, weights = weights)
 
@@ -195,7 +191,7 @@ adjusted_coefficients <-  confounding_model.op_RIAGENDR$coefficients[2:7]
 
 ```{r}
 # Operational check for race confounding
-temp <- data_confounding %>% select(SLD012, DR1TKCAL, DR1TCARB, DR1TFIBE, DR1TTFAT, DR1TPROT, DR1TSUGR, RIDRETH1)
+temp <- data_confounding %>% select(SLD012, DR1TCARB, DR1TFIBE, DR1TTFAT, DR1TPROT, RIDRETH1)
 
 confounding_model.op_RIDRETH1 <- lm(SLD012~ ., data = temp, weights = weights)
 
@@ -206,7 +202,7 @@ adjusted_coefficients <-  confounding_model.op_RIDRETH1$coefficients[2:7]
 
 ```{r}
 # Operational check for born in the US confounding
-temp <- data_confounding %>% select(SLD012, DR1TKCAL, DR1TCARB, DR1TFIBE, DR1TTFAT, DR1TPROT, DR1TSUGR, DMDBORN4)
+temp <- data_confounding %>% select(SLD012,DR1TCARB, DR1TFIBE, DR1TTFAT, DR1TPROT, DMDBORN4)
 
 confounding_model.op_DMDBORN4 <- lm(SLD012~ ., data = temp, weights = weights)
 
@@ -217,7 +213,7 @@ adjusted_coefficients <-  confounding_model.op_DMDBORN4$coefficients[2:7]
 
 ```{r}
 # Operational check for marital status confounding
-temp <- data_confounding %>% select(SLD012, DR1TKCAL, DR1TCARB, DR1TFIBE, DR1TTFAT, DR1TPROT, DR1TSUGR, DMDMARTL)
+temp <- data_confounding %>% select(SLD012, DR1TCARB, DR1TFIBE, DR1TTFAT, DR1TPROT, DMDMARTL)
 
 confounding_model.op_DMDMARTL <- lm(SLD012~ ., data = temp, weights = weights)
 
@@ -228,7 +224,7 @@ adjusted_coefficients <-  confounding_model.op_DMDMARTL$coefficients[2:7]
 
 ```{r}
 # Operational check for household size confounding
-temp <- data_confounding %>% select(SLD012, DR1TKCAL, DR1TCARB, DR1TFIBE, DR1TTFAT, DR1TPROT, DR1TSUGR, DMDHHSIZ)
+temp <- data_confounding %>% select(SLD012, DR1TCARB, DR1TFIBE, DR1TTFAT, DR1TPROT, DMDHHSIZ)
 
 confounding_model.op_DMDHHSIZ <- lm(SLD012~ ., data = temp, weights = weights)
 
@@ -239,7 +235,7 @@ adjusted_coefficients <-  confounding_model.op_DMDHHSIZ$coefficients[2:7]
 
 ```{r}
 # Operational check for number of child under 5 confounding
-temp <- data_confounding %>% select(SLD012, DR1TKCAL, DR1TCARB, DR1TFIBE, DR1TTFAT, DR1TPROT, DR1TSUGR, DMDHHSZA)
+temp <- data_confounding %>% select(SLD012, DR1TCARB, DR1TFIBE, DR1TTFAT, DR1TPROT, DMDHHSZA)
 
 confounding_model.op_DMDHHSZA <- lm(SLD012~ ., data = temp, weights = weights)
 
@@ -261,11 +257,25 @@ adjusted_coefficients <-  confounding_model.op_INDHHIN2$coefficients[2:7]
 
 ```{r}
 # Operational check for number of child under 5 confounding
-temp <- data_confounding %>% select(SLD012, DR1TKCAL, DR1TCARB, DR1TFIBE, DR1TTFAT, DR1TPROT, DR1TSUGR, INDFMPIR)
+temp <- data_confounding %>% select(SLD012, DR1TCARB, DR1TFIBE, DR1TTFAT, DR1TPROT, INDFMPIR)
 
 confounding_model.op_INDFMPIR <- lm(SLD012~ ., data = temp, weights = weights)
 
 adjusted_coefficients <-  confounding_model.op_INDFMPIR$coefficients[2:7]
 
 100 * (original_coefficients - adjusted_coefficients) / original_coefficients
+```
+
+```{r}
+temp <- data_confounding %>% select(SLD012, DR1TCARB, DR1TFIBE, DR1TTFAT, DR1TPROT, DR1TSUGR)
+weights <- data_confounding %>% pull(WTDRD1)
+
+confounding_model.nokcal <- lm(SLD012~ ., data = temp, weights = weights)
+summary(confounding_model.nokcal)
+
+temp <- data_confounding %>% select(SLD012, DR1TKCAL, DR1TCARB, DR1TFIBE, DR1TTFAT, DR1TPROT, DR1TSUGR)
+confounding_model.kcal <- lm(SLD012~ ., data = temp, weights = weights)
+summary(confounding_model.kcal)
+
+anova(confounding_model.nokcal,confounding_model.kcal, test="Chisq")
 ```

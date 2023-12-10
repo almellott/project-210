@@ -1,0 +1,156 @@
+```{r}
+# Construct a data frame containing sleep, macronutrient and demographic data
+data_confounding <- left_join(sleep, diet_total, by = "SEQN")
+data_confounding <- left_join(data_confounding, demo, by = "SEQN")
+data_confounding <- data_confounding %>%
+  select(SEQN, #identifier
+         SLD012, SLD013, SLQ050, SLQ120, #sleep questions: weekday hrs, weeknd hr, doctor question, overly sleepy?
+         WTDRD1, DR1DRSTZ, #dietary weight and dietary recall status
+         DR1TKCAL, DR1TPROT, DR1TCARB, DR1TSUGR, DR1TFIBE, DR1TTFAT, #diet
+         RIAGENDR, RIDAGEYR, RIDRETH1, RIDRETH3, #gender, age in yrs, ethnicity, ethnicity w/ NH Asian
+         DMDBORN4, #born in US?
+         DMDMARTL, #Marital status, household ref. of martial status
+         DMDHHSIZ, DMDHHSZA, # of people in HH and # of children 5 years or younger in HH
+         DMDHHSZB, # of children 6-17 years old in HH
+         DMDHHSZE, # of adults 60 years or older in HH
+         INDHHIN2, INDFMIN2, INDFMPIR #Annual household income, annual family income, and ratio of family income to poverty
+  )
+
+# data preprocessing
+data_confounding$SLQ050[data_confounding$SLQ050 == 9] <- NA
+data_confounding$SLQ120[data_confounding$SLQ120 == 9] <- NA
+data_confounding$DR1DRSTZ[data_confounding$DR1DRSTZ == 2] <- NA
+data_confounding$DMDBORN4[data_confounding$DMDBORN4 == 77] <- NA
+data_confounding$DMDBORN4[data_confounding$DMDBORN4 == 99] <- NA
+data_confounding$DMDMARTL[data_confounding$DMDMARTL == 77] <- NA
+data_confounding$DMDMARTL[data_confounding$DMDMARTL == 99] <- NA
+data_confounding$INDHHIN2[data_confounding$INDHHIN2 == 77] <- NA
+data_confounding$INDHHIN2[data_confounding$INDHHIN2 == 99] <- NA
+data_confounding$INDFMIN2[data_confounding$INDFMIN2 == 77] <- NA
+data_confounding$INDFMIN2[data_confounding$INDFMIN2 == 99] <- NA
+data_confounding$INDFMPIR[data_confounding$INDFMPIR == 77] <- NA
+data_confounding$INDFMPIR[data_confounding$INDFMPIR == 99] <- NA
+
+data_confounding <- data_confounding %>% mutate(DMDBORN4 = as.integer(DMDBORN4) - 1, DMDMARTL = as.factor(DMDMARTL), RIDRETH1 = as.factor(RIDRETH1), RIDRETH3 = as.factor(RIDRETH3), SLQ050 = as.numeric(SLQ050) - 1)
+```
+
+```{r}
+# Explore proportional odds assumption for unadjusted model
+
+# Proportional odds are NOT satisfied
+temp <- data_confounding %>% select(SLQ120, DR1TPROT, DR1TCARB, DR1TFIBE, DR1TTFAT) %>%
+  mutate(indicator1234 = as.integer(SLQ120 > 0), 
+         indicator234 = as.integer(SLQ120 > 1),
+         indicator34 = as.integer(SLQ120 > 2),
+         indicator4 = as.integer(SLQ120 > 3))
+
+temp1234 <- temp %>% select(indicator1234, DR1TPROT, DR1TCARB, DR1TFIBE, DR1TTFAT) %>% 
+  na.omit()
+
+confounding_model.odds1234 <- glm(indicator1234 ~ ., data = temp1234, family = "binomial")
+summary(confounding_model.odds1234)
+
+temp234 <- temp %>% select(indicator234, DR1TPROT, DR1TCARB, DR1TFIBE, DR1TTFAT) %>% 
+  na.omit()
+
+confounding_model.odds234 <- glm(indicator234 ~ ., data = temp234, family = "binomial")
+summary(confounding_model.odds234)
+
+temp34 <- temp %>% select(indicator34, DR1TPROT, DR1TCARB, DR1TFIBE, DR1TTFAT) %>% 
+  na.omit()
+
+confounding_model.odds34 <- glm(indicator34 ~ ., data = temp34, family = "binomial")
+summary(confounding_model.odds34)
+
+temp4 <- temp %>% select(indicator4, DR1TPROT, DR1TCARB, DR1TFIBE, DR1TTFAT) %>% 
+  na.omit()
+
+confounding_model.odds4 <- glm(indicator4 ~ ., data = temp4, family = "binomial")
+summary(confounding_model.odds4)
+```
+
+```{r}
+
+summ.MNfit <- function(fit, digits=4){
+  s <- summary(fit)
+  for(i in 2:length(fit$lev))
+    {
+    ##
+    cat("\nLevel", fit$lev[i], "vs. Level", fit$lev[1], "\n")
+    ##
+    betaHat <- s$coefficients[(i-1),1:5]
+    se <- s$standard.errors[(i-1),1:5]
+    zStat <- betaHat / se
+    pval <- 2 * pnorm(abs(zStat), lower.tail=FALSE)
+    ##
+    RRR <- exp(betaHat)
+    RRR.lower <- exp(betaHat - qnorm(0.975)*se)
+    RRR.upper <- exp(betaHat + qnorm(0.975)*se)
+    ##
+    results <- cbind(betaHat, se, pval, RRR, RRR.lower, RRR.upper)
+    print(round(results, digits=digits))
+    }
+}
+
+```
+
+```{r}
+# Unadjusted multinomial model for overly sleep outcome
+temp <- data_confounding %>% select(SLQ120, DR1TPROT, DR1TCARB, DR1TFIBE, DR1TTFAT)
+
+temp <- temp %>% 
+  filter(SLQ120 %in% c(0,1,2,3,4)) 
+
+multinom.unadjusted <- multinom(SLQ120 ~ ., data = temp)
+summ = summary(multinom.unadjusted)
+summ.MNfit(multinom.unadjusted)
+
+```
+
+```{r}
+# Partially adjusted multinomial model for overly sleep outcome
+temp <- data_confounding %>% select(SLQ120, DR1TPROT, DR1TCARB, DR1TFIBE, DR1TTFAT, RIAGENDR, RIDAGEYR, RIDRETH1, DMDBORN4, DMDHHSIZ, DMDHHSZA)
+
+temp <- temp %>% 
+  filter(SLQ120 %in% c(0,1,2,3,4)) 
+
+multinom.partially.adjusted <- multinom(SLQ120 ~ ., data = temp)
+summ = summary(multinom.partially.adjusted)
+summ.MNfit(multinom.partially.adjusted)
+```
+
+```{r}
+# Fully adjusted multinomial model for overly sleep outcome
+temp <- data_confounding %>% select(SLQ120, DR1TPROT, DR1TCARB, DR1TFIBE, DR1TTFAT, RIAGENDR, RIDAGEYR, RIDRETH1, DMDBORN4, DMDHHSIZ, DMDHHSZA, DMDMARTL, INDFMPIR)
+
+temp <- temp %>% 
+  filter(SLQ120 %in% c(0,1,2,3,4)) 
+
+multinom.fully.adjusted <- multinom(SLQ120 ~ ., data = temp)
+summ = summary(multinom.fully.adjusted)
+summ.MNfit(multinom.fully.adjusted)
+```
+
+```{r}
+# Unadjusted logistic model for telling a doctor about sleep outcome
+temp <- data_confounding %>% select(SLQ050, DR1TPROT, DR1TCARB, DR1TFIBE, DR1TTFAT)
+
+logistic.unadjusted <- glm(SLQ050 ~ ., data = temp, family = "binomial")
+summary(logistic.unadjusted)
+```
+
+```{r}
+# Unadjusted logistic model for telling a doctor about sleep outcome
+temp <- data_confounding %>% select(SLQ050, DR1TPROT, DR1TCARB, DR1TFIBE, DR1TTFAT, RIAGENDR, RIDAGEYR, RIDRETH1, DMDBORN4, DMDHHSIZ, DMDHHSZA)
+
+logistic.partially.adjusted <- glm(SLQ050 ~ ., data = temp, family = "binomial")
+summary(logistic.partially.adjusted)
+```
+
+```{r}
+# Unadjusted logistic model for telling a doctor about sleep outcome
+temp <- data_confounding %>% select(SLQ050, DR1TPROT, DR1TCARB, DR1TFIBE, DR1TTFAT, RIAGENDR, RIDAGEYR, RIDRETH1, DMDBORN4, DMDHHSIZ, DMDHHSZA, DMDMARTL, INDFMPIR)
+
+logistic.fully.adjusted <- glm(SLQ050 ~ ., data = temp, family = "binomial")
+summary(logistic.fully.adjusted)
+```
