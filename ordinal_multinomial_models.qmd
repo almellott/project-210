@@ -1,4 +1,16 @@
 ```{r}
+library(broom)
+library(ggplot2)
+library(nnet)
+library(splitstackshape)
+library(ResourceSelection)
+#library(LogisticDx)
+library(survival)
+#library(DescTools)
+library(car)
+```
+
+```{r}
 # Construct a data frame containing sleep, macronutrient and demographic data
 data_confounding <- left_join(sleep, diet_total, by = "SEQN")
 data_confounding <- left_join(data_confounding, demo, by = "SEQN")
@@ -38,40 +50,72 @@ data_confounding <- data_confounding %>% mutate(DMDBORN4 = as.integer(DMDBORN4) 
 # Explore proportional odds assumption for unadjusted model
 
 # Proportional odds are NOT satisfied
+
+# Preprocess data  and create indicators with dichotomous cutoffs
 temp <- data_confounding %>% select(SLQ120, DR1TPROT, DR1TCARB, DR1TFIBE, DR1TTFAT) %>%
   mutate(indicator1234 = as.integer(SLQ120 > 0), 
          indicator234 = as.integer(SLQ120 > 1),
          indicator34 = as.integer(SLQ120 > 2),
          indicator4 = as.integer(SLQ120 > 3))
 
-temp1234 <- temp %>% select(indicator1234, DR1TPROT, DR1TCARB, DR1TFIBE, DR1TTFAT) %>% 
-  na.omit()
+temp1234 <- temp %>% select(indicator1234, DR1TPROT, DR1TCARB, DR1TFIBE, DR1TTFAT) %>% na.omit()
+```
 
-confounding_model.odds1234 <- glm(indicator1234 ~ ., data = temp1234, family = "binomial")
-summary(confounding_model.odds1234)
+```{r}
+# Create models using different cutoffs for the outcome
+proportional.odds1234 <- glm(indicator1234 ~ ., data = temp1234, family = "binomial")
 
 temp234 <- temp %>% select(indicator234, DR1TPROT, DR1TCARB, DR1TFIBE, DR1TTFAT) %>% 
   na.omit()
 
-confounding_model.odds234 <- glm(indicator234 ~ ., data = temp234, family = "binomial")
-summary(confounding_model.odds234)
+proportional.odds234 <- glm(indicator234 ~ ., data = temp234, family = "binomial")
 
 temp34 <- temp %>% select(indicator34, DR1TPROT, DR1TCARB, DR1TFIBE, DR1TTFAT) %>% 
   na.omit()
 
-confounding_model.odds34 <- glm(indicator34 ~ ., data = temp34, family = "binomial")
-summary(confounding_model.odds34)
+proportional.odds34 <- glm(indicator34 ~ ., data = temp34, family = "binomial")
 
 temp4 <- temp %>% select(indicator4, DR1TPROT, DR1TCARB, DR1TFIBE, DR1TTFAT) %>% 
   na.omit()
 
-confounding_model.odds4 <- glm(indicator4 ~ ., data = temp4, family = "binomial")
-summary(confounding_model.odds4)
+proportional.odds4 <- glm(indicator4 ~ ., data = temp4, family = "binomial")
+```
+
+```{r}
+# Function to extract coefficients and confidence intervals
+get_coef_ci <- function(model, group) {
+  tidy_model <- tidy(model, conf.int = TRUE)
+  coef_ci <- tidy_model[-1, c("term", "estimate", "conf.low", "conf.high")]
+  coef_ci$group <- group
+  return(coef_ci)
+}
+
+# Extract coefficients and confidence intervals for each model
+coef_ci_1234 <- get_coef_ci(proportional.odds1234, "I(X>0): Rarely or more")
+coef_ci_234 <- get_coef_ci(proportional.odds234, "I(X>1): Sometimes or more")
+coef_ci_34 <- get_coef_ci(proportional.odds34, "I(X>2): Often or Almost Always")
+coef_ci_4 <- get_coef_ci(proportional.odds4, "I(X>3): Almost Always")
+
+all_coef_ci <- rbind(coef_ci_1234, coef_ci_234, coef_ci_34, coef_ci_4)
+
+# Create a plot
+proportional.odds.plot <- ggplot(all_coef_ci, aes(x = term, y = estimate, ymin = conf.low, ymax = conf.high, group = group, color = group)) +
+  geom_point(position = position_dodge(width = 0.5), size = 2) +
+  geom_errorbar(position = position_dodge(width = 0.5), width = 0.2) +
+  labs(title = "Slope Estimates and 95% Confidence Intervals",
+       subtitle = "In the past month, how often did you feel overly sleepy during the day?",
+       x = "Predictors",
+       y = "Estimates") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+proportional.odds.plot
 ```
 
 ```{r}
 
-summ.MNfit <- function(fit, digits=4){
+summ.MNfit <- function(fit, digits=5){
   s <- summary(fit)
   for(i in 2:length(fit$lev))
     {
@@ -102,9 +146,8 @@ temp <- temp %>%
   filter(SLQ120 %in% c(0,1,2,3,4)) 
 
 multinom.unadjusted <- multinom(SLQ120 ~ ., data = temp)
-summ = summary(multinom.unadjusted)
+#summ = summary(multinom.unadjusted)
 summ.MNfit(multinom.unadjusted)
-
 ```
 
 ```{r}
@@ -138,9 +181,18 @@ temp <- data_confounding %>% select(SLQ050, DR1TPROT, DR1TCARB, DR1TFIBE, DR1TTF
 logistic.unadjusted <- glm(SLQ050 ~ ., data = temp, family = "binomial")
 summary(logistic.unadjusted)
 ```
+```{r}
+hist(logistic.unadjusted$fitted, main="p-hats")
+#hist(logist(logistic.unadjusted), main="hat-values")
+
+par(mfrow=c(1,1))
+influencePlot(logistic.unadjusted,col="red")
+residualPlot(logistic.unadjusted)
+hoslem.test(logistic.unadjusted$y,fitted(logistic.unadjusted))
+```
 
 ```{r}
-# Unadjusted logistic model for telling a doctor about sleep outcome
+# Partially logistic model for telling a doctor about sleep outcome
 temp <- data_confounding %>% select(SLQ050, DR1TPROT, DR1TCARB, DR1TFIBE, DR1TTFAT, RIAGENDR, RIDAGEYR, RIDRETH1, DMDBORN4, DMDHHSIZ, DMDHHSZA)
 
 logistic.partially.adjusted <- glm(SLQ050 ~ ., data = temp, family = "binomial")
@@ -148,9 +200,10 @@ summary(logistic.partially.adjusted)
 ```
 
 ```{r}
-# Unadjusted logistic model for telling a doctor about sleep outcome
+# Fully logistic model for telling a doctor about sleep outcome
 temp <- data_confounding %>% select(SLQ050, DR1TPROT, DR1TCARB, DR1TFIBE, DR1TTFAT, RIAGENDR, RIDAGEYR, RIDRETH1, DMDBORN4, DMDHHSIZ, DMDHHSZA, DMDMARTL, INDFMPIR)
 
 logistic.fully.adjusted <- glm(SLQ050 ~ ., data = temp, family = "binomial")
 summary(logistic.fully.adjusted)
 ```
+
